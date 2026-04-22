@@ -34,6 +34,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # third party modules
+    "rest_framework",
+    'drf_yasg',
     # Created Apps
     "apps.users.apps.UsersConfig",
     "apps.todos.apps.TodosConfig",
@@ -67,6 +70,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "core.wsgi.application"
+
+#rest_framework config
+REST_FRAMEWORK = {
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+    'DEFAULT_VERSION': 'v1',
+    'ALLOWED_VERSIONS': ['v1', 'v2'],
+}
 
 
 # Database

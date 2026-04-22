@@ -4,7 +4,7 @@ EXPOSE 8000
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1 \
-    PIP_INDEX_URL=https://mirror-pypi.runflare.com/simple
+    PIP_INDEX_URL=https://pypi.devneeds.ir/simple/
 
 
 
