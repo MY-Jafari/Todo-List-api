@@ -36,7 +36,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # third party modules
     "rest_framework",
-    'drf_yasg',
+    "drf_yasg",
     # Created Apps
     "apps.users.apps.UsersConfig",
     "apps.todos.apps.TodosConfig",
@@ -71,11 +71,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "core.wsgi.application"
 
-#rest_framework config
+# rest_framework config
 REST_FRAMEWORK = {
-    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
-    'DEFAULT_VERSION': 'v1',
-    'ALLOWED_VERSIONS': ['v1', 'v2'],
+    "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.URLPathVersioning",
+    "DEFAULT_VERSION": "v1",
+    "ALLOWED_VERSIONS": ["v1",],
+    #pagination
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10    
 }
 
 
