@@ -1,9 +1,17 @@
 from django.db import models
 
 from apps.users.models import User
+from core import settings
 
 
 class List(models.Model):
+    user = models.ForeignKey(
+            settings.AUTH_USER_MODEL,
+            on_delete=models.CASCADE,
+            related_name='owned_lists', 
+            
+            
+        )
     list_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="lists")
     list_name = models.CharField(max_length=200)
@@ -27,6 +35,14 @@ class Task(models.Model):
         ("done", "Done"),
     ]
 
+    
+    user = models.ForeignKey(
+            settings.AUTH_USER_MODEL,
+            on_delete=models.CASCADE,
+            related_name='owned_tasks', 
+            
+            
+        )
     task_id = models.AutoField(primary_key=True)
     list = models.ForeignKey(List, on_delete=models.CASCADE, related_name="tasks")
     task_title = models.CharField(max_length=255)

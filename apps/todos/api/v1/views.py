@@ -1,15 +1,18 @@
 from rest_framework import generics, mixins, serializers, permissions
 from rest_framework.pagination import PageNumberPagination
+
 # from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, NotFound
 from .serializers import ListSerializer, TaskSerializer
 from apps.todos.models import List, Task
 
-#pagination
+
+# pagination
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 5
-    page_size_query_param = 'page_size'   
+    page_size_query_param = "page_size"
     max_page_size = 100
+
 
 # List Views
 class ListCreateView(generics.ListCreateAPIView):
@@ -24,12 +27,18 @@ class ListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def get_queryset(self):
+        return List.objects.filter(user=self.request.user)
+
 
 class ListRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = List.objects.all()
     serializer_class = ListSerializer
     permission_classes = [permissions.IsAuthenticated]
-    lookup_field = 'list_id'
+    lookup_field = "list_id"
 
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user)
@@ -41,7 +50,6 @@ class TaskCreateView(generics.ListCreateAPIView):
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardResultsSetPagination
-
 
     def perform_create(self, serializer):
         list_id_from_data = self.request.data.get("list")
@@ -79,18 +87,19 @@ class TaskRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class TaskListCreateForListView(
-    mixins.ListModelMixin,     # Provides the 'list' action (HTTP GET)
-    mixins.CreateModelMixin,   # Provides the 'create' action (HTTP POST)
-    generics.GenericAPIView    # Base class to combine mixin actions
+    mixins.ListModelMixin,  # Provides the 'list' action (HTTP GET)
+    mixins.CreateModelMixin,  # Provides the 'create' action (HTTP POST)
+    generics.GenericAPIView,  # Base class to combine mixin actions
 ):
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
+
     def get_queryset(self):
         # Retrieve list_id from URL parameters.
         list_id_from_url = self.kwargs.get("list_id")
         if not list_id_from_url:
             raise NotFound("list_id not found in URL parameters.")
-        
+
         try:
             # Verify that the list exists and is associated with the authenticated user.
             List.objects.get(list_id=list_id_from_url, user=self.request.user)
@@ -98,11 +107,14 @@ class TaskListCreateForListView(
             return Task.objects.filter(list_id=list_id_from_url)
         except List.DoesNotExist:
             raise PermissionDenied("You don't have permissions to access this list.")
+
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
     def post(self, request, *args, **kwargs):
         # The 'create' method internally calls perform_create after validation.
         return self.create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         list_id_from_url = self.kwargs.get("list_id")
         if not list_id_from_url:
@@ -122,3 +134,8 @@ class TaskListCreateForListView(
             raise Exception(
                 f"An unexpected error occurred while creating the task for list {list_id_from_url}: {e}"
             )
+    def get_queryset(self):
+        return Task.objects.filter(
+            list__user=self.request.user,
+            list_id=self.kwargs['list_id']
+        )
