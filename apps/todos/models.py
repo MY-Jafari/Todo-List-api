@@ -5,15 +5,12 @@ from core import settings
 
 
 class List(models.Model):
-    user = models.ForeignKey(
-            settings.AUTH_USER_MODEL,
-            on_delete=models.CASCADE,
-            related_name='owned_lists', 
-            
-            
-        )
     list_id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="lists")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="lists"
+    )
     list_name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -21,6 +18,7 @@ class List(models.Model):
 
     def __str__(self):
         return self.list_name
+
 
 
 class Task(models.Model):
