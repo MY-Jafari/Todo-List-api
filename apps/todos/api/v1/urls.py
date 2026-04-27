@@ -8,14 +8,18 @@ from .views import (
 )
 
 urlpatterns = [
-    # List URLs 
+    # List URLs
     path("lists/", ListCreateView.as_view(), name="list-list-create"),
-    path("lists/<int:list_id>/", ListRetrieveUpdateDestroyView.as_view(), name="list-detail"),
-
-    # Task URLs 
+    path(
+        "lists/<int:list_id>/",
+        ListRetrieveUpdateDestroyView.as_view(),
+        name="list-detail",
+    ),
+    # Task URLs
     path("tasks/", TaskCreateView.as_view(), name="task-create"),
-    path("tasks/<int:pk>/", TaskRetrieveUpdateDestroyView.as_view(), name="task-detail"),
-
+    path(
+        "tasks/<int:pk>/", TaskRetrieveUpdateDestroyView.as_view(), name="task-detail"
+    ),
     path(
         "lists/<int:list_id>/tasks/",
         TaskListCreateForListView.as_view(),

@@ -1,24 +1,26 @@
 import django_filters
 from .models import Task
 
+
 class TaskFilter(django_filters.FilterSet):
-    #ordering
+    search = django_filters.CharFilter(field_name='task_title', lookup_expr='icontains')
+    # ordering
     o = django_filters.OrderingFilter(
         # Which fields to allow for ordering
         fields=(
-            ('status', 'status'),
-            ('priority', 'priority'),
-            ('task_title', 'task_title'),
-            ('created_at', 'created_at'),
+            ("status", "status"),
+            ("priority", "priority"),
+            ("task_title", "task_title"),
+            ("created_at", "created_at"),
         ),
         field_labels={
-            'status': 'Status',
-            'priority': 'Priority',
-            'task_title': 'Title',
-            'created_at': 'Creation Date',
-        }
+            "status": "Status",
+            "priority": "Priority",
+            "task_title": "Title",
+            "created_at": "Creation Date",
+        },
     )
 
     class Meta:
         model = Task
-        fields = ['status', 'priority', 'list', 'task_title']
+        fields = ["status", "priority", "list"]

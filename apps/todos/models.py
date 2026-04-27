@@ -1,15 +1,11 @@
 from django.db import models
-
-from apps.users.models import User
 from core import settings
 
 
 class List(models.Model):
     list_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="lists"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="lists"
     )
     list_name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
@@ -18,7 +14,6 @@ class List(models.Model):
 
     def __str__(self):
         return self.list_name
-
 
 
 class Task(models.Model):
@@ -33,14 +28,11 @@ class Task(models.Model):
         ("done", "Done"),
     ]
 
-    
     user = models.ForeignKey(
-            settings.AUTH_USER_MODEL,
-            on_delete=models.CASCADE,
-            related_name='owned_tasks', 
-            
-            
-        )
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="owned_tasks",
+    )
     task_id = models.AutoField(primary_key=True)
     list = models.ForeignKey(List, on_delete=models.CASCADE, related_name="tasks")
     task_title = models.CharField(max_length=255)

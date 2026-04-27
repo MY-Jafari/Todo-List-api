@@ -1,6 +1,7 @@
 from rest_framework import generics, mixins, serializers, permissions
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
+
 # from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, NotFound
 from .serializers import ListSerializer, TaskSerializer
@@ -80,6 +81,8 @@ class TaskCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         return Task.objects.filter(list__user=self.request.user)
+
+
 class TaskRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
@@ -91,15 +94,14 @@ class TaskRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class TaskListCreateForListView(
-    mixins.ListModelMixin,  
-    mixins.CreateModelMixin,  
-    generics.GenericAPIView,  
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    generics.GenericAPIView,
 ):
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_class = TaskFilter
-
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -127,11 +129,13 @@ class TaskListCreateForListView(
             raise Exception(
                 f"An unexpected error occurred while creating the task for list {list_id_from_url}: {e}"
             )
+
     def get_queryset(self):
         list_id = self.kwargs.get("list_id")
         if not list_id:
             raise NotFound("list_id not found in URL parameters.")
         return Task.objects.filter(list_id=list_id, list__user=self.request.user)
+
     def get_list_object(self):
         list_id_from_url = self.kwargs.get("list_id")
         if not list_id_from_url:
