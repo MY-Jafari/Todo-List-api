@@ -1,15 +1,12 @@
 from rest_framework import generics, mixins, serializers, permissions
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
-
-# from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, NotFound
 from .serializers import ListSerializer, TaskSerializer
 from apps.todos.models import List, Task
 from ...filters import TaskFilter
 
 
-# pagination
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 5
     page_size_query_param = "page_size"
@@ -28,12 +25,6 @@ class ListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-    def get_queryset(self):
-        return List.objects.filter(user=self.request.user)
 
 
 class ListRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
@@ -54,6 +45,14 @@ class TaskCreateView(generics.ListCreateAPIView):
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
     filterset_class = TaskFilter
+    ordering = ['-created_at']
+    
+    def get_serializer(self, *args, **kwargs):
+        if 'data' in kwargs:
+            data = kwargs['data'].copy() if hasattr(kwargs['data'], 'copy') else dict(kwargs['data'])
+            data['user'] = self.request.user.id 
+            kwargs['data'] = data
+        return super().get_serializer(*args, **kwargs)
 
     def perform_create(self, serializer):
         list_id_from_data = self.request.data.get("list")
@@ -64,12 +63,10 @@ class TaskCreateView(generics.ListCreateAPIView):
             )
 
         try:
-            # Retrieve the List object, ensuring it belongs to the current user
             list_obj = List.objects.get(
                 list_id=list_id_from_data, user=self.request.user
             )
-            # Save the task, linking it to the retrieved list object
-            serializer.save(list=list_obj)
+            serializer.save(user=self.request.user, list=list_obj)
         except List.DoesNotExist:
             raise PermissionDenied(
                 "You do not have permission to access this list or the list is not found."
@@ -88,8 +85,18 @@ class TaskRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_serializer(self, *args, **kwargs):
+        if 'data' in kwargs:
+            data = kwargs['data'].copy() if hasattr(kwargs['data'], 'copy') else dict(kwargs['data'])
+            data['user'] = self.request.user.id  
+            kwargs['data'] = data
+        return super().get_serializer(*args, **kwargs)
+
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        serializer.save(user=self.request.user, list=instance.list)
+
     def get_queryset(self):
-        # task belong to the current user .
         return self.queryset.filter(list__user=self.request.user)
 
 
@@ -102,12 +109,19 @@ class TaskListCreateForListView(
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_class = TaskFilter
+    ordering = ['-created_at']
+
+    def get_serializer(self, *args, **kwargs):
+        if 'data' in kwargs:
+            data = kwargs['data'].copy() if hasattr(kwargs['data'], 'copy') else dict(kwargs['data'])
+            data['user'] = self.request.user.id  
+            kwargs['data'] = data
+        return super().get_serializer(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        # The 'create' method internally calls perform_create after validation.
         return self.create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
@@ -117,15 +131,13 @@ class TaskListCreateForListView(
                 {"list": "List ID is required in the URL."}
             )
         try:
-            # Retrieve the List object again to ensure it belongs to the current user.
             list_obj = List.objects.get(
                 list_id=list_id_from_url, user=self.request.user
             )
-            serializer.save(list=list_obj)
+            serializer.save(user=self.request.user, list=list_obj)
         except List.DoesNotExist:
             raise PermissionDenied("You don't have permissions to access this list.")
         except Exception as e:
-            # Catch any other unexpected errors during task creation.
             raise Exception(
                 f"An unexpected error occurred while creating the task for list {list_id_from_url}: {e}"
             )
@@ -141,7 +153,6 @@ class TaskListCreateForListView(
         if not list_id_from_url:
             raise NotFound("list_id not found in URL parameters.")
         try:
-            # Verify that the list exists and is associated with the authenticated user.
             return List.objects.get(list_id=list_id_from_url, user=self.request.user)
         except List.DoesNotExist:
             raise PermissionDenied("You don't have permissions to access this list.")

@@ -35,13 +35,14 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
-    "django.contrib.staticfiles",
+    "django.contrib.staticfiles",   
     # third party modules
     "rest_framework",
     "drf_yasg",
     "django_filters",
+    "pytest_django",
     # Created Apps
-    "apps.users.apps.UsersConfig",
+    "apps.users",
     "apps.todos.apps.TodosConfig",
 ]
 
@@ -169,4 +170,4 @@ MEDIA_ROOT = "/app/media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Set custom user model
-AUTH_USER_MODEL = "users.User"
+AUTH_USER_MODEL = 'users.User'

@@ -24,4 +24,5 @@ django-mail-templated
 black
 flake8
 pytest
-pytest-django
+pytest_django
+pytest-cov
