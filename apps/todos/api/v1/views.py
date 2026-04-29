@@ -15,6 +15,13 @@ class StandardResultsSetPagination(PageNumberPagination):
 
 # List Views
 class ListCreateView(generics.ListCreateAPIView):
+    """
+    List and create todo lists.
+
+    get: Get all lists for the authenticated user.
+    post: Create a new todo list.
+    """
+
     queryset = List.objects.all()
     serializer_class = ListSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -28,6 +35,15 @@ class ListCreateView(generics.ListCreateAPIView):
 
 
 class ListRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Retrieve, update, and delete a specific todo list.
+
+    get: Get list details by list_id.
+    put: Update a list.
+    patch: Partially update a list.
+    delete: Delete a list and its tasks.
+    """
+
     queryset = List.objects.all()
     serializer_class = ListSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -39,19 +55,30 @@ class ListRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
 # Task Views
 class TaskCreateView(generics.ListCreateAPIView):
+    """
+    List and create tasks.
+
+    get: Get all tasks for the authenticated user with optional filtering.
+    post: Create a new task in a specified list.
+    """
+
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
     filterset_class = TaskFilter
-    ordering = ['-created_at']
-    
+    ordering = ["-created_at"]
+
     def get_serializer(self, *args, **kwargs):
-        if 'data' in kwargs:
-            data = kwargs['data'].copy() if hasattr(kwargs['data'], 'copy') else dict(kwargs['data'])
-            data['user'] = self.request.user.id 
-            kwargs['data'] = data
+        if "data" in kwargs:
+            data = (
+                kwargs["data"].copy()
+                if hasattr(kwargs["data"], "copy")
+                else dict(kwargs["data"])
+            )
+            data["user"] = self.request.user.id
+            kwargs["data"] = data
         return super().get_serializer(*args, **kwargs)
 
     def perform_create(self, serializer):
@@ -81,15 +108,28 @@ class TaskCreateView(generics.ListCreateAPIView):
 
 
 class TaskRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Retrieve, update, and delete a specific task.
+
+    get: Get task details by ID.
+    put: Update a task.
+    patch: Partially update a task (e.g., status or priority).
+    delete: Delete a task.
+    """
+
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_serializer(self, *args, **kwargs):
-        if 'data' in kwargs:
-            data = kwargs['data'].copy() if hasattr(kwargs['data'], 'copy') else dict(kwargs['data'])
-            data['user'] = self.request.user.id  
-            kwargs['data'] = data
+        if "data" in kwargs:
+            data = (
+                kwargs["data"].copy()
+                if hasattr(kwargs["data"], "copy")
+                else dict(kwargs["data"])
+            )
+            data["user"] = self.request.user.id
+            kwargs["data"] = data
         return super().get_serializer(*args, **kwargs)
 
     def perform_update(self, serializer):
@@ -105,17 +145,28 @@ class TaskListCreateForListView(
     mixins.CreateModelMixin,
     generics.GenericAPIView,
 ):
+    """
+    List and create tasks for a specific todo list.
+
+    get: Get all tasks in a list by list_id.
+    post: Create a new task in the specified list.
+    """
+
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_class = TaskFilter
-    ordering = ['-created_at']
+    ordering = ["-created_at"]
 
     def get_serializer(self, *args, **kwargs):
-        if 'data' in kwargs:
-            data = kwargs['data'].copy() if hasattr(kwargs['data'], 'copy') else dict(kwargs['data'])
-            data['user'] = self.request.user.id  
-            kwargs['data'] = data
+        if "data" in kwargs:
+            data = (
+                kwargs["data"].copy()
+                if hasattr(kwargs["data"], "copy")
+                else dict(kwargs["data"])
+            )
+            data["user"] = self.request.user.id
+            kwargs["data"] = data
         return super().get_serializer(*args, **kwargs)
 
     def get(self, request, *args, **kwargs):

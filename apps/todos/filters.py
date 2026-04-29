@@ -3,7 +3,7 @@ from .models import Task
 
 
 class TaskFilter(django_filters.FilterSet):
-    search = django_filters.CharFilter(field_name='task_title', lookup_expr='icontains')
+    search = django_filters.CharFilter(field_name="task_title", lookup_expr="icontains")
     # ordering
     o = django_filters.OrderingFilter(
         # Which fields to allow for ordering
