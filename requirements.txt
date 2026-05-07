@@ -12,7 +12,7 @@ djangorestframework-simplejwt
 drf-spectacular
 psycopg[binary]==3.2.9
 asgiref==3.9.1
-
+pyotp
 
 # deployment module
 gunicorn>=21,<23

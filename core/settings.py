@@ -41,8 +41,9 @@ INSTALLED_APPS = [
     "drf_yasg",
     "django_filters",
     "pytest_django",
+    "mail_templated",
     # Created Apps
-    "apps.users",
+    "apps.accounts.apps.AccountsConfig",
     "apps.todos.apps.TodosConfig",
 ]
 
@@ -57,6 +58,10 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "core.urls"
+
+# Email settings for development
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "noreply@todolist.local"
 
 TEMPLATES = [
     {
@@ -198,4 +203,4 @@ MEDIA_ROOT = "/app/media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Set custom user model
-AUTH_USER_MODEL = "users.User"
+AUTH_USER_MODEL = "accounts.User"
