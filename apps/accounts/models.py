@@ -4,6 +4,8 @@ This module defines a fully custom User model built from scratch
 using AbstractBaseUser and PermissionsMixin.
 """
 
+import uuid
+
 from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -221,50 +223,60 @@ class User(AbstractBaseUser, PermissionsMixin):
 class PhoneVerification(models.Model):
     """
     Stores a TOTP secret key for phone number verification.
+
     Uses Time-based One-Time Password (TOTP) via pyotp.
     No need to store OTP codes in the database — they are
     generated and verified using the secret and current time.
 
     Attributes:
         phone_number (CharField): The phone number being verified.
+        session_token (CharField): A unique token used to link the
+            send-otp and verify-otp steps without exposing the phone number.
         secret (CharField): Base32 secret used to generate TOTP codes.
         created_at (DateTimeField): When this verification record was created.
-        verified (BooleanField): Whether the phone has been verified with this secret.
+        verified (BooleanField): Whether the phone has been verified.
     """
-
     phone_number = models.CharField(
-        max_length=15,
-        verbose_name=_("phone number"),
-        help_text=_("The phone number being verified."),
+        max_length=11,
+        verbose_name=_('phone number'),
+        help_text=_('The phone number being verified.')
+    )
+    session_token = models.CharField(
+        max_length=64,
+        unique=True,
+        default=uuid.uuid4,
+        verbose_name=_('session token'),
+        help_text=_('Unique token to identify this verification session.')
     )
     secret = models.CharField(
         max_length=32,
-        verbose_name=_("TOTP secret"),
-        help_text=_("Base32 secret key for TOTP generation."),
+        verbose_name=_('TOTP secret'),
+        help_text=_('Base32 secret key for TOTP generation.')
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name=_("created at"),
-        help_text=_("When this verification was initiated."),
+        verbose_name=_('created at'),
+        help_text=_('When this verification was initiated.')
     )
     verified = models.BooleanField(
         default=False,
-        verbose_name=_("verified"),
-        help_text=_("Whether verification was successful."),
+        verbose_name=_('verified'),
+        help_text=_('Whether verification was successful.')
     )
 
     class Meta:
-        verbose_name = _("phone verification")
-        verbose_name_plural = _("phone verifications")
+        verbose_name = _('phone verification')
+        verbose_name_plural = _('phone verifications')
         indexes = [
-            models.Index(fields=["phone_number", "verified"], name="phone_verify_idx"),
+            models.Index(fields=['phone_number', 'verified'], name='phone_verify_idx'),
+            models.Index(fields=['session_token'], name='session_token_idx'),
         ]
-        ordering = ["-created_at"]
+        ordering = ['-created_at']
 
     def __str__(self):
         """Return a string representation of the verification attempt."""
-        status = "verified" if self.verified else "pending"
-        return f"Verification for {self.phone_number} ({status})"
+        status = 'verified' if self.verified else 'pending'
+        return f'Verification for {self.phone_number} ({status})'
 
     @classmethod
     def start_verification(cls, phone_number):
@@ -288,7 +300,10 @@ class PhoneVerification(models.Model):
 
         # Generate a new secret and create record
         secret = pyotp.random_base32()
-        verification = cls.objects.create(phone_number=phone_number, secret=secret)
+        verification = cls.objects.create(
+            phone_number=phone_number,
+            secret=secret
+        )
 
         # Generate the current TOTP code (valid for 120 seconds)
         totp = pyotp.TOTP(secret, interval=120)
@@ -299,6 +314,7 @@ class PhoneVerification(models.Model):
     def verify_code(self, code):
         """
         Verify a TOTP code against this verification's secret.
+
         The code is valid for the configured interval (default 120 seconds)
         and can be verified once within that window. After successful
         verification, this record is marked as verified.
@@ -317,12 +333,10 @@ class PhoneVerification(models.Model):
         # valid_window=0 means only current time window, no drift
         if totp.verify(code, valid_window=0):
             self.verified = True
-            self.save(update_fields=["verified"])
+            self.save(update_fields=['verified'])
             return True
 
         return False
-
-
 class EmailVerification(models.Model):
     """
     Stores email verification codes securely using SHA256 hashing.

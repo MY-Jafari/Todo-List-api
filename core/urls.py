@@ -20,6 +20,8 @@ schema_view = get_schema_view(
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/todos/", include("apps.todos.urls")),
+    path('api/v1/auth/', include('apps.accounts.api.v1.urls')),
+    path('api/v1/', include('apps.todos.api.v1.urls')),
     # JWT
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
