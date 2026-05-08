@@ -25,7 +25,7 @@ class UserModelTests(TestCase):
             phone_number="09123456789",
             password="testpassword123",
             full_name="Test User",
-            email="test@example.com"
+            email="test@example.com",
         )
 
     # User Creation Tests
@@ -33,8 +33,7 @@ class UserModelTests(TestCase):
     def test_create_user_success(self):
         """Test creating a regular user is successful and fields are set correctly."""
         user = User.objects.create_user(
-            phone_number="09234567890",
-            password="anotherpassword123"
+            phone_number="09234567890", password="anotherpassword123"
         )
         self.assertEqual(user.phone_number, "09234567890")
         self.assertTrue(user.check_password("anotherpassword123"))
@@ -52,7 +51,7 @@ class UserModelTests(TestCase):
             phone_number="09345678901",
             password="securepass",
             email="full.user@example.com",
-            full_name="Full User"
+            full_name="Full User",
         )
         self.assertEqual(user.email, "full.user@example.com")
         self.assertEqual(user.full_name, "Full User")
@@ -65,8 +64,7 @@ class UserModelTests(TestCase):
     def test_create_superuser_success(self):
         """Test creating a superuser has correct permissions and verified phone."""
         superuser = User.objects.create_superuser(
-            phone_number="09987654321",
-            password="superpassword"
+            phone_number="09987654321", password="superpassword"
         )
         self.assertTrue(superuser.is_staff)
         self.assertTrue(superuser.is_superuser)
@@ -77,9 +75,7 @@ class UserModelTests(TestCase):
         """Test that creating a superuser with is_staff=False raises ValueError."""
         with self.assertRaises(ValueError):
             User.objects.create_superuser(
-                phone_number="09876543210",
-                password="superpass",
-                is_staff=False
+                phone_number="09876543210", password="superpass", is_staff=False
             )
 
     def test_phone_number_is_unique(self):
@@ -87,7 +83,7 @@ class UserModelTests(TestCase):
         with self.assertRaises(IntegrityError):
             User.objects.create_user(
                 phone_number="09123456789",  # Already used in setUp
-                password="anotherpass"
+                password="anotherpass",
             )
 
     # String Representation Tests
@@ -116,7 +112,7 @@ class UserModelTests(TestCase):
         user = User.objects.create_user(phone_number="09222222222", password="pass")
         self.assertEqual(user.get_short_name(), "09222222222")
 
-    #  Helper Methods Tests 
+    #  Helper Methods Tests
 
     def test_has_verified_email_returns_false_by_default(self):
         """Test has_verified_email returns False for a new user."""
@@ -133,6 +129,7 @@ class UserModelTests(TestCase):
         user = User.objects.create_user(phone_number="09333333333", password="pass")
         self.assertFalse(user.has_verified_email())
 
+
 class PhoneVerificationModelTests(TestCase):
     """
     Test suite for the PhoneVerification (TOTP) model.
@@ -140,7 +137,9 @@ class PhoneVerificationModelTests(TestCase):
 
     def setUp(self):
         """Start a verification for a test phone number."""
-        self.verification, self.code = PhoneVerification.start_verification("09123456789")
+        self.verification, self.code = PhoneVerification.start_verification(
+            "09123456789"
+        )
 
     def test_start_verification_creates_record(self):
         """Test that start_verification creates a new record."""
@@ -206,12 +205,10 @@ class EmailVerificationModelTests(TestCase):
     def setUp(self):
         """Create a user and generate an email verification code."""
         self.user = User.objects.create_user(
-            phone_number="09123456789",
-            password="testpassword123"
+            phone_number="09123456789", password="testpassword123"
         )
         self.verification, self.code = EmailVerification.generate(
-            email="test@example.com",
-            user=self.user
+            email="test@example.com", user=self.user
         )
 
     def test_generate_creates_record(self):

@@ -19,16 +19,12 @@ class ListModelTests(TestCase):
     def setUp(self):
         """Create a test user for foreign key relations."""
         self.user = User.objects.create_user(
-            phone_number="09123456789",
-            password="testpass123"
+            phone_number="09123456789", password="testpass123"
         )
 
     def test_create_list_success(self):
         """Test creating a list with valid data."""
-        todo_list = List.objects.create(
-            user=self.user,
-            list_name="My Work Tasks"
-        )
+        todo_list = List.objects.create(user=self.user, list_name="My Work Tasks")
 
         self.assertEqual(todo_list.list_name, "My Work Tasks")
         self.assertEqual(todo_list.user, self.user)
@@ -41,17 +37,13 @@ class ListModelTests(TestCase):
 
     def test_list_str_returns_list_name(self):
         """Test __str__ returns the list name."""
-        todo_list = List.objects.create(
-            user=self.user,
-            list_name="Personal"
-        )
+        todo_list = List.objects.create(user=self.user, list_name="Personal")
         self.assertEqual(str(todo_list), "Personal")
 
     def test_two_users_can_have_same_list_name(self):
         """Test that two users can have lists with the same name."""
         user2 = User.objects.create_user(
-            phone_number="09234567890",
-            password="testpass456"
+            phone_number="09234567890", password="testpass456"
         )
 
         List.objects.create(user=self.user, list_name="Work")
@@ -66,13 +58,9 @@ class TaskModelTests(TestCase):
     def setUp(self):
         """Create a user and a list for task tests."""
         self.user = User.objects.create_user(
-            phone_number="09123456789",
-            password="testpass123"
+            phone_number="09123456789", password="testpass123"
         )
-        self.todo_list = List.objects.create(
-            user=self.user,
-            list_name="Test List"
-        )
+        self.todo_list = List.objects.create(user=self.user, list_name="Test List")
 
     def test_create_task_success(self):
         """Test creating a task with valid data."""
@@ -80,7 +68,7 @@ class TaskModelTests(TestCase):
             user=self.user,
             list=self.todo_list,
             task_title="Buy groceries",
-            task_description="Milk, eggs, bread"
+            task_description="Milk, eggs, bread",
         )
 
         self.assertEqual(task.task_title, "Buy groceries")
@@ -96,7 +84,7 @@ class TaskModelTests(TestCase):
             user=self.user,
             list=self.todo_list,
             task_title="Urgent task",
-            priority="high"
+            priority="high",
         )
         self.assertEqual(task.priority, "high")
 
@@ -106,24 +94,20 @@ class TaskModelTests(TestCase):
             user=self.user,
             list=self.todo_list,
             task_title="In progress task",
-            status="inprogress"
+            status="inprogress",
         )
         self.assertEqual(task.status, "inprogress")
 
     def test_task_default_status_is_todo(self):
         """Test that new tasks have 'todo' status by default."""
         task = Task.objects.create(
-            user=self.user,
-            list=self.todo_list,
-            task_title="Default status task"
+            user=self.user, list=self.todo_list, task_title="Default status task"
         )
         self.assertEqual(task.status, "todo")
 
     def test_task_str_returns_task_title(self):
         """Test __str__ returns the task title."""
         task = Task.objects.create(
-            user=self.user,
-            list=self.todo_list,
-            task_title="Read a book"
+            user=self.user, list=self.todo_list, task_title="Read a book"
         )
         self.assertEqual(str(task), "Read a book")

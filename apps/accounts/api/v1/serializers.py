@@ -24,10 +24,11 @@ class SendOTPSerializer(serializers.Serializer):
     Validates that the phone number is a valid Iranian mobile
     and is not already registered.
     """
+
     phone_number = serializers.CharField(
         max_length=11,
         min_length=11,
-        help_text=_('Iranian phone number (11 digits, starting with 09).')
+        help_text=_("Iranian phone number (11 digits, starting with 09)."),
     )
 
     def validate_phone_number(self, value):
@@ -43,17 +44,19 @@ class SendOTPSerializer(serializers.Serializer):
         Raises:
             serializers.ValidationError: If format is invalid or already registered.
         """
-        pattern = r'^09\d{9}$'
+        pattern = r"^09\d{9}$"
 
         if not re.match(pattern, value):
             raise serializers.ValidationError(
-                _('Invalid phone number format. '
-                  'Must be 11 digits starting with 09 (e.g., 09123456789).')
+                _(
+                    "Invalid phone number format. "
+                    "Must be 11 digits starting with 09 (e.g., 09123456789)."
+                )
             )
 
         if User.objects.filter(phone_number=value).exists():
             raise serializers.ValidationError(
-                _('This phone number is already registered.')
+                _("This phone number is already registered.")
             )
 
         return value
@@ -65,29 +68,26 @@ class VerifyOTPAndRegisterSerializer(serializers.Serializer):
 
     Uses a JWT verification_token to identify the verification session.
     """
+
     verification_token = serializers.CharField(
-        help_text=_('JWT verification token from send-otp response.')
+        help_text=_("JWT verification token from send-otp response.")
     )
     otp_code = serializers.CharField(
-        max_length=6,
-        min_length=6,
-        help_text=_('6-digit TOTP code sent to the phone.')
+        max_length=6, min_length=6, help_text=_("6-digit TOTP code sent to the phone.")
     )
     password = serializers.CharField(
         min_length=6,
         write_only=True,
-        help_text=_('Password for the new account (minimum 6 characters).')
+        help_text=_("Password for the new account (minimum 6 characters)."),
     )
     email = serializers.EmailField(
-        required=False,
-        allow_blank=True,
-        help_text=_('Optional email address.')
+        required=False, allow_blank=True, help_text=_("Optional email address.")
     )
     full_name = serializers.CharField(
         max_length=150,
         required=False,
         allow_blank=True,
-        help_text=_('Optional full name.')
+        help_text=_("Optional full name."),
     )
 
     def validate(self, data):
@@ -103,46 +103,43 @@ class VerifyOTPAndRegisterSerializer(serializers.Serializer):
         Raises:
             serializers.ValidationError: If token or code is invalid.
         """
-        verification_token = data['verification_token']
-        otp_code = data['otp_code']
+        verification_token = data["verification_token"]
+        otp_code = data["otp_code"]
 
         # Decode JWT verification token
         try:
             token = AccessToken(verification_token)
-            phone_number = token.get('phone_number')
-            verification_id = token.get('verification_id')
+            phone_number = token.get("phone_number")
+            verification_id = token.get("verification_id")
 
             if not phone_number or not verification_id:
-                raise serializers.ValidationError(
-                    _('Invalid verification token.')
-                )
+                raise serializers.ValidationError(_("Invalid verification token."))
 
         except TokenError:
             raise serializers.ValidationError(
-                _('Expired or invalid verification token. '
-                  'Please request a new code.')
+                _(
+                    "Expired or invalid verification token. "
+                    "Please request a new code."
+                )
             )
 
         # Find the verification record
         try:
             verification = PhoneVerification.objects.get(
-                id=verification_id,
-                phone_number=phone_number,
-                verified=False
+                id=verification_id, phone_number=phone_number, verified=False
             )
         except PhoneVerification.DoesNotExist:
             raise serializers.ValidationError(
-                _('Verification session not found. '
-                  'Please request a new code.')
+                _("Verification session not found. " "Please request a new code.")
             )
 
         # Verify TOTP code
         if not verification.verify_code(otp_code):
             raise serializers.ValidationError(
-                _('Invalid or expired verification code.')
+                _("Invalid or expired verification code.")
             )
 
-        data['phone_number'] = phone_number
+        data["phone_number"] = phone_number
         return data
 
 
@@ -152,10 +149,11 @@ class SendLoginOTPSerializer(serializers.Serializer):
 
     Validates that the phone number belongs to an existing user.
     """
+
     phone_number = serializers.CharField(
         max_length=11,
         min_length=11,
-        help_text=_('Registered Iranian phone number (11 digits, starting with 09).')
+        help_text=_("Registered Iranian phone number (11 digits, starting with 09)."),
     )
 
     def validate_phone_number(self, value):
@@ -171,17 +169,19 @@ class SendLoginOTPSerializer(serializers.Serializer):
         Raises:
             serializers.ValidationError: If format is invalid or not registered.
         """
-        pattern = r'^09\d{9}$'
+        pattern = r"^09\d{9}$"
 
         if not re.match(pattern, value):
             raise serializers.ValidationError(
-                _('Invalid phone number format. '
-                  'Must be 11 digits starting with 09 (e.g., 09123456789).')
+                _(
+                    "Invalid phone number format. "
+                    "Must be 11 digits starting with 09 (e.g., 09123456789)."
+                )
             )
 
         if not User.objects.filter(phone_number=value).exists():
             raise serializers.ValidationError(
-                _('No account found with this phone number.')
+                _("No account found with this phone number.")
             )
 
         return value
@@ -193,13 +193,12 @@ class VerifyLoginOTPSerializer(serializers.Serializer):
 
     Uses a JWT verification_token to identify the verification session.
     """
+
     verification_token = serializers.CharField(
-        help_text=_('JWT verification token from send-login-otp response.')
+        help_text=_("JWT verification token from send-login-otp response.")
     )
     otp_code = serializers.CharField(
-        max_length=6,
-        min_length=6,
-        help_text=_('6-digit TOTP code sent to the phone.')
+        max_length=6, min_length=6, help_text=_("6-digit TOTP code sent to the phone.")
     )
 
     def validate(self, data):
@@ -215,46 +214,43 @@ class VerifyLoginOTPSerializer(serializers.Serializer):
         Raises:
             serializers.ValidationError: If token or code is invalid.
         """
-        verification_token = data['verification_token']
-        otp_code = data['otp_code']
+        verification_token = data["verification_token"]
+        otp_code = data["otp_code"]
 
         # Decode JWT verification token
         try:
             token = AccessToken(verification_token)
-            phone_number = token.get('phone_number')
-            verification_id = token.get('verification_id')
+            phone_number = token.get("phone_number")
+            verification_id = token.get("verification_id")
 
             if not phone_number or not verification_id:
-                raise serializers.ValidationError(
-                    _('Invalid verification token.')
-                )
+                raise serializers.ValidationError(_("Invalid verification token."))
 
         except TokenError:
             raise serializers.ValidationError(
-                _('Expired or invalid verification token. '
-                  'Please request a new code.')
+                _(
+                    "Expired or invalid verification token. "
+                    "Please request a new code."
+                )
             )
 
         # Find the verification record
         try:
             verification = PhoneVerification.objects.get(
-                id=verification_id,
-                phone_number=phone_number,
-                verified=False
+                id=verification_id, phone_number=phone_number, verified=False
             )
         except PhoneVerification.DoesNotExist:
             raise serializers.ValidationError(
-                _('Verification session not found. '
-                  'Please request a new code.')
+                _("Verification session not found. " "Please request a new code.")
             )
 
         # Verify TOTP code
         if not verification.verify_code(otp_code):
             raise serializers.ValidationError(
-                _('Invalid or expired verification code.')
+                _("Invalid or expired verification code.")
             )
 
-        data['phone_number'] = phone_number
+        data["phone_number"] = phone_number
         return data
 
 
@@ -265,15 +261,11 @@ class LoginSerializer(serializers.Serializer):
     This is the default login method. Users must provide
     their phone number and password.
     """
+
     phone_number = serializers.CharField(
-        max_length=11,
-        min_length=11,
-        help_text=_('Registered phone number.')
+        max_length=11, min_length=11, help_text=_("Registered phone number.")
     )
-    password = serializers.CharField(
-        write_only=True,
-        help_text=_('Account password.')
-    )
+    password = serializers.CharField(write_only=True, help_text=_("Account password."))
 
     def validate_phone_number(self, value):
         """
@@ -288,15 +280,18 @@ class LoginSerializer(serializers.Serializer):
         Raises:
             serializers.ValidationError: If format is invalid.
         """
-        pattern = r'^09\d{9}$'
+        pattern = r"^09\d{9}$"
 
         if not re.match(pattern, value):
             raise serializers.ValidationError(
-                _('Invalid phone number format. '
-                  'Must be 11 digits starting with 09 (e.g., 09123456789).')
+                _(
+                    "Invalid phone number format. "
+                    "Must be 11 digits starting with 09 (e.g., 09123456789)."
+                )
             )
 
         return value
+
 
 class SendEmailVerificationSerializer(serializers.Serializer):
     """
@@ -305,9 +300,8 @@ class SendEmailVerificationSerializer(serializers.Serializer):
     Validates that the email is not already taken by another user.
     Requires authentication - the user must be logged in.
     """
-    email = serializers.EmailField(
-        help_text=_('Email address to verify.')
-    )
+
+    email = serializers.EmailField(help_text=_("Email address to verify."))
 
     def validate_email(self, value):
         """
@@ -323,18 +317,16 @@ class SendEmailVerificationSerializer(serializers.Serializer):
             serializers.ValidationError: If email is already taken
                 or user is not authenticated.
         """
-        user = self.context['request'].user
+        user = self.context["request"].user
 
         # Ensure user is authenticated
         if user.is_anonymous:
-            raise serializers.ValidationError(
-                _('Authentication is required.')
-            )
+            raise serializers.ValidationError(_("Authentication is required."))
 
         # Check if any other user has this email verified
         if User.objects.filter(email=value).exclude(pk=user.pk).exists():
             raise serializers.ValidationError(
-                _('This email is already registered by another user.')
+                _("This email is already registered by another user.")
             )
 
         return value
@@ -346,13 +338,12 @@ class VerifyEmailSerializer(serializers.Serializer):
 
     Validates the code against the stored EmailVerification record.
     """
-    email = serializers.EmailField(
-        help_text=_('Email address being verified.')
-    )
+
+    email = serializers.EmailField(help_text=_("Email address being verified."))
     code = serializers.CharField(
         max_length=6,
         min_length=6,
-        help_text=_('6-digit verification code sent to the email.')
+        help_text=_("6-digit verification code sent to the email."),
     )
 
     def validate(self, data):
@@ -371,35 +362,34 @@ class VerifyEmailSerializer(serializers.Serializer):
         """
         from apps.accounts.models import EmailVerification
 
-        user = self.context['request'].user
+        user = self.context["request"].user
 
         # Ensure user is authenticated
         if user.is_anonymous:
-            raise serializers.ValidationError(
-                _('Authentication is required.')
-            )
+            raise serializers.ValidationError(_("Authentication is required."))
 
-        email = data['email']
-        code = data['code']
+        email = data["email"]
+        code = data["code"]
 
         try:
             verification = EmailVerification.objects.filter(
-                email=email,
-                user=user,
-                is_used=False
-            ).latest('created_at')
+                email=email, user=user, is_used=False
+            ).latest("created_at")
         except EmailVerification.DoesNotExist:
             raise serializers.ValidationError(
-                _('No verification code found for this email. '
-                  'Please request a new code.')
+                _(
+                    "No verification code found for this email. "
+                    "Please request a new code."
+                )
             )
 
         if not verification.verify_code(code):
             raise serializers.ValidationError(
-                _('Invalid or expired verification code.')
+                _("Invalid or expired verification code.")
             )
 
         return data
+
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     """
@@ -408,10 +398,11 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     Validates that the phone number belongs to an existing user.
     The reset code will be sent to this phone number via SMS.
     """
+
     phone_number = serializers.CharField(
         max_length=11,
         min_length=11,
-        help_text=_('Registered Iranian phone number (11 digits, starting with 09).')
+        help_text=_("Registered Iranian phone number (11 digits, starting with 09)."),
     )
 
     def validate_phone_number(self, value):
@@ -427,17 +418,19 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         Raises:
             serializers.ValidationError: If format is invalid or not registered.
         """
-        pattern = r'^09\d{9}$'
+        pattern = r"^09\d{9}$"
 
         if not re.match(pattern, value):
             raise serializers.ValidationError(
-                _('Invalid phone number format. '
-                  'Must be 11 digits starting with 09 (e.g., 09123456789).')
+                _(
+                    "Invalid phone number format. "
+                    "Must be 11 digits starting with 09 (e.g., 09123456789)."
+                )
             )
 
         if not User.objects.filter(phone_number=value).exists():
             raise serializers.ValidationError(
-                _('No account found with this phone number.')
+                _("No account found with this phone number.")
             )
 
         return value
@@ -450,18 +443,17 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     Uses a JWT verification_token from the password-reset request.
     Sets a new password for the user after successful verification.
     """
+
     verification_token = serializers.CharField(
-        help_text=_('JWT verification token from password-reset request response.')
+        help_text=_("JWT verification token from password-reset request response.")
     )
     otp_code = serializers.CharField(
-        max_length=6,
-        min_length=6,
-        help_text=_('6-digit OTP code sent to the phone.')
+        max_length=6, min_length=6, help_text=_("6-digit OTP code sent to the phone.")
     )
     new_password = serializers.CharField(
         min_length=6,
         write_only=True,
-        help_text=_('New password (minimum 6 characters).')
+        help_text=_("New password (minimum 6 characters)."),
     )
 
     def validate(self, data):
@@ -478,53 +470,48 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         Raises:
             serializers.ValidationError: If token or code is invalid.
         """
-        verification_token = data['verification_token']
-        otp_code = data['otp_code']
+        verification_token = data["verification_token"]
+        otp_code = data["otp_code"]
 
         # Decode JWT verification token
         try:
             token = AccessToken(verification_token)
-            phone_number = token.get('phone_number')
-            verification_id = token.get('verification_id')
+            phone_number = token.get("phone_number")
+            verification_id = token.get("verification_id")
 
             if not phone_number or not verification_id:
-                raise serializers.ValidationError(
-                    _('Invalid verification token.')
-                )
+                raise serializers.ValidationError(_("Invalid verification token."))
 
         except TokenError:
             raise serializers.ValidationError(
-                _('Expired or invalid verification token. '
-                  'Please request a new code.')
+                _(
+                    "Expired or invalid verification token. "
+                    "Please request a new code."
+                )
             )
 
         # Find the verification record
         try:
             verification = PhoneVerification.objects.get(
-                id=verification_id,
-                phone_number=phone_number,
-                verified=False
+                id=verification_id, phone_number=phone_number, verified=False
             )
         except PhoneVerification.DoesNotExist:
             raise serializers.ValidationError(
-                _('Verification session not found. '
-                  'Please request a new code.')
+                _("Verification session not found. " "Please request a new code.")
             )
 
         # Verify TOTP code
         if not verification.verify_code(otp_code):
             raise serializers.ValidationError(
-                _('Invalid or expired verification code.')
+                _("Invalid or expired verification code.")
             )
 
         # Find the user
         try:
             user = User.objects.get(phone_number=phone_number)
         except User.DoesNotExist:
-            raise serializers.ValidationError(
-                _('User not found.')
-            )
+            raise serializers.ValidationError(_("User not found."))
 
-        data['phone_number'] = phone_number
-        data['user'] = user
+        data["phone_number"] = phone_number
+        data["user"] = user
         return data

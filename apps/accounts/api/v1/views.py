@@ -14,7 +14,10 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model, authenticate
 
 from apps.accounts.models import PhoneVerification, EmailVerification
-from apps.accounts.notifications import send_phone_verification_code, send_email_verification_code
+from apps.accounts.notifications import (
+    send_phone_verification_code,
+    send_email_verification_code,
+)
 from .serializers import (
     SendOTPSerializer,
     VerifyOTPAndRegisterSerializer,
@@ -48,8 +51,8 @@ def get_tokens_for_user(user):
     """
     refresh = RefreshToken.for_user(user)
     return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
+        "refresh": str(refresh),
+        "access": str(refresh.access_token),
     }
 
 
@@ -68,8 +71,8 @@ def create_verification_token(phone_number, verification_id):
         str: Encoded JWT access token (valid for 2 minutes).
     """
     token = RefreshToken()
-    token['phone_number'] = phone_number
-    token['verification_id'] = verification_id
+    token["phone_number"] = phone_number
+    token["verification_id"] = verification_id
     token.set_exp(lifetime=timedelta(minutes=VERIFICATION_TOKEN_MINUTES))
     return str(token.access_token)
 
@@ -86,6 +89,7 @@ class SendOTPView(generics.GenericAPIView):
     Response:
         {"detail": "Verification code sent.", "verification_token": "eyJ..."}
     """
+
     serializer_class = SendOTPSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -93,22 +97,31 @@ class SendOTPView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        phone_number = serializer.validated_data['phone_number']
+        phone_number = serializer.validated_data["phone_number"]
 
         # Rate limiting check
-        recent = PhoneVerification.objects.filter(
-            phone_number=phone_number,
-            created_at__gte=timezone.now() - timedelta(seconds=OTP_COOLDOWN_SECONDS)
-        ).order_by('-created_at').first()
+        recent = (
+            PhoneVerification.objects.filter(
+                phone_number=phone_number,
+                created_at__gte=timezone.now()
+                - timedelta(seconds=OTP_COOLDOWN_SECONDS),
+            )
+            .order_by("-created_at")
+            .first()
+        )
 
         if recent:
             remaining = int(
-                (recent.created_at + timedelta(seconds=OTP_COOLDOWN_SECONDS) - timezone.now()).total_seconds()
+                (
+                    recent.created_at
+                    + timedelta(seconds=OTP_COOLDOWN_SECONDS)
+                    - timezone.now()
+                ).total_seconds()
             )
             if remaining > 0:
                 return Response(
-                    {'detail': _(f'Please wait {remaining} seconds.')},
-                    status=status.HTTP_429_TOO_MANY_REQUESTS
+                    {"detail": _(f"Please wait {remaining} seconds.")},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
 
         verification, code = PhoneVerification.start_verification(phone_number)
@@ -118,8 +131,11 @@ class SendOTPView(generics.GenericAPIView):
         send_phone_verification_code(phone_number, code)
 
         return Response(
-            {'detail': _('Verification code sent.'), 'verification_token': verification_token},
-            status=status.HTTP_200_OK
+            {
+                "detail": _("Verification code sent."),
+                "verification_token": verification_token,
+            },
+            status=status.HTTP_200_OK,
         )
 
 
@@ -140,6 +156,7 @@ class VerifyOTPAndRegisterView(generics.GenericAPIView):
 
     Response: {"detail": "Registration successful.", "user": {...}, "tokens": {...}}
     """
+
     serializer_class = VerifyOTPAndRegisterSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -149,26 +166,26 @@ class VerifyOTPAndRegisterView(generics.GenericAPIView):
         data = serializer.validated_data
 
         user = User.objects.create_user(
-            phone_number=data['phone_number'],
-            password=data['password'],
-            email=data.get('email'),
-            full_name=data.get('full_name'),
-            is_phone_verified=True
+            phone_number=data["phone_number"],
+            password=data["password"],
+            email=data.get("email"),
+            full_name=data.get("full_name"),
+            is_phone_verified=True,
         )
 
         tokens = get_tokens_for_user(user)
 
         return Response(
             {
-                'detail': _('Registration successful.'),
-                'user': {
-                    'phone_number': user.phone_number,
-                    'full_name': user.full_name,
-                    'email': user.email,
+                "detail": _("Registration successful."),
+                "user": {
+                    "phone_number": user.phone_number,
+                    "full_name": user.full_name,
+                    "email": user.email,
                 },
-                'tokens': tokens,
+                "tokens": tokens,
             },
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -184,6 +201,7 @@ class SendLoginOTPView(generics.GenericAPIView):
     Response:
         {"detail": "Login code sent.", "verification_token": "eyJ..."}
     """
+
     serializer_class = SendLoginOTPSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -191,22 +209,31 @@ class SendLoginOTPView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        phone_number = serializer.validated_data['phone_number']
+        phone_number = serializer.validated_data["phone_number"]
 
         # Rate limiting
-        recent = PhoneVerification.objects.filter(
-            phone_number=phone_number,
-            created_at__gte=timezone.now() - timedelta(seconds=OTP_COOLDOWN_SECONDS)
-        ).order_by('-created_at').first()
+        recent = (
+            PhoneVerification.objects.filter(
+                phone_number=phone_number,
+                created_at__gte=timezone.now()
+                - timedelta(seconds=OTP_COOLDOWN_SECONDS),
+            )
+            .order_by("-created_at")
+            .first()
+        )
 
         if recent:
             remaining = int(
-                (recent.created_at + timedelta(seconds=OTP_COOLDOWN_SECONDS) - timezone.now()).total_seconds()
+                (
+                    recent.created_at
+                    + timedelta(seconds=OTP_COOLDOWN_SECONDS)
+                    - timezone.now()
+                ).total_seconds()
             )
             if remaining > 0:
                 return Response(
-                    {'detail': _(f'Please wait {remaining} seconds.')},
-                    status=status.HTTP_429_TOO_MANY_REQUESTS
+                    {"detail": _(f"Please wait {remaining} seconds.")},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
 
         verification, code = PhoneVerification.start_verification(phone_number)
@@ -216,8 +243,8 @@ class SendLoginOTPView(generics.GenericAPIView):
         send_phone_verification_code(phone_number, code)
 
         return Response(
-            {'detail': _('Login code sent.'), 'verification_token': verification_token},
-            status=status.HTTP_200_OK
+            {"detail": _("Login code sent."), "verification_token": verification_token},
+            status=status.HTTP_200_OK,
         )
 
 
@@ -236,35 +263,35 @@ class VerifyLoginOTPView(generics.GenericAPIView):
     Response:
         {"detail": "Login successful.", "user": {...}, "tokens": {...}}
     """
+
     serializer_class = VerifyLoginOTPSerializer
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        phone_number = serializer.validated_data['phone_number']
+        phone_number = serializer.validated_data["phone_number"]
 
         try:
             user = User.objects.get(phone_number=phone_number)
         except User.DoesNotExist:
             return Response(
-                {'detail': _('User not found.')},
-                status=status.HTTP_404_NOT_FOUND
+                {"detail": _("User not found.")}, status=status.HTTP_404_NOT_FOUND
             )
 
         tokens = get_tokens_for_user(user)
 
         return Response(
             {
-                'detail': _('Login successful.'),
-                'user': {
-                    'phone_number': user.phone_number,
-                    'full_name': user.full_name,
-                    'email': user.email,
+                "detail": _("Login successful."),
+                "user": {
+                    "phone_number": user.phone_number,
+                    "full_name": user.full_name,
+                    "email": user.email,
                 },
-                'tokens': tokens,
+                "tokens": tokens,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
 
 
@@ -283,6 +310,7 @@ class LoginView(generics.GenericAPIView):
     Response:
         {"detail": "Login successful.", "user": {...}, "tokens": {...}}
     """
+
     serializer_class = LoginSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -290,31 +318,33 @@ class LoginView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        phone_number = serializer.validated_data['phone_number']
-        password = serializer.validated_data['password']
+        phone_number = serializer.validated_data["phone_number"]
+        password = serializer.validated_data["password"]
 
         user = authenticate(request, phone_number=phone_number, password=password)
 
         if user is None:
             return Response(
-                {'detail': _('Invalid phone number or password.')},
-                status=status.HTTP_401_UNAUTHORIZED
+                {"detail": _("Invalid phone number or password.")},
+                status=status.HTTP_401_UNAUTHORIZED,
             )
 
         tokens = get_tokens_for_user(user)
 
         return Response(
             {
-                'detail': _('Login successful.'),
-                'user': {
-                    'phone_number': user.phone_number,
-                    'full_name': user.full_name,
-                    'email': user.email,
+                "detail": _("Login successful."),
+                "user": {
+                    "phone_number": user.phone_number,
+                    "full_name": user.full_name,
+                    "email": user.email,
                 },
-                'tokens': tokens,
+                "tokens": tokens,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
+
+
 class SendEmailVerificationView(generics.GenericAPIView):
     """
     Send a verification code to the user's email address.
@@ -329,6 +359,7 @@ class SendEmailVerificationView(generics.GenericAPIView):
     Response (200 OK):
         {"detail": "Verification code sent."}
     """
+
     serializer_class = SendEmailVerificationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -337,18 +368,15 @@ class SendEmailVerificationView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data['email']
+        email = serializer.validated_data["email"]
 
         # Generate verification code and send email
-        verification, code = EmailVerification.generate(
-            email=email,
-            user=request.user
-        )
+        verification, code = EmailVerification.generate(email=email, user=request.user)
         send_email_verification_code(email, code)
 
         return Response(
-            {'detail': _('Verification code sent to your email.')},
-            status=status.HTTP_200_OK
+            {"detail": _("Verification code sent to your email.")},
+            status=status.HTTP_200_OK,
         )
 
 
@@ -366,6 +394,7 @@ class VerifyEmailView(generics.GenericAPIView):
     Response (200 OK):
         {"detail": "Email verified successfully."}
     """
+
     serializer_class = VerifyEmailSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -374,18 +403,18 @@ class VerifyEmailView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data['email']
+        email = serializer.validated_data["email"]
 
         # Update user's email verification status
         user = request.user
         user.email = email
         user.email_verified = True
-        user.save(update_fields=['email', 'email_verified'])
+        user.save(update_fields=["email", "email_verified"])
 
         return Response(
-            {'detail': _('Email verified successfully.')},
-            status=status.HTTP_200_OK
+            {"detail": _("Email verified successfully.")}, status=status.HTTP_200_OK
         )
+
 
 class PasswordResetRequestView(generics.GenericAPIView):
     serializer_class = PasswordResetRequestSerializer
@@ -395,22 +424,31 @@ class PasswordResetRequestView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        phone_number = serializer.validated_data['phone_number']
+        phone_number = serializer.validated_data["phone_number"]
 
         # Rate limiting
-        recent = PhoneVerification.objects.filter(
-            phone_number=phone_number,
-            created_at__gte=timezone.now() - timedelta(seconds=OTP_COOLDOWN_SECONDS)
-        ).order_by('-created_at').first()
+        recent = (
+            PhoneVerification.objects.filter(
+                phone_number=phone_number,
+                created_at__gte=timezone.now()
+                - timedelta(seconds=OTP_COOLDOWN_SECONDS),
+            )
+            .order_by("-created_at")
+            .first()
+        )
 
         if recent:
             remaining = int(
-                (recent.created_at + timedelta(seconds=OTP_COOLDOWN_SECONDS) - timezone.now()).total_seconds()
+                (
+                    recent.created_at
+                    + timedelta(seconds=OTP_COOLDOWN_SECONDS)
+                    - timezone.now()
+                ).total_seconds()
             )
             if remaining > 0:
                 return Response(
-                    {'detail': _(f'Please wait {remaining} seconds.')},
-                    status=status.HTTP_429_TOO_MANY_REQUESTS
+                    {"detail": _(f"Please wait {remaining} seconds.")},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
 
         # Generate TOTP
@@ -422,11 +460,13 @@ class PasswordResetRequestView(generics.GenericAPIView):
 
         return Response(
             {
-                'detail': _('Password reset code sent.'),
-                'verification_token': verification_token,
+                "detail": _("Password reset code sent."),
+                "verification_token": verification_token,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
+
+
 class PasswordResetConfirmView(generics.GenericAPIView):
     """
     Confirm password reset with OTP and set new password.
@@ -445,6 +485,7 @@ class PasswordResetConfirmView(generics.GenericAPIView):
     Response (200 OK):
         {"detail": "Password has been reset successfully."}
     """
+
     serializer_class = PasswordResetConfirmSerializer
     permission_classes = [permissions.AllowAny]
 
@@ -453,14 +494,14 @@ class PasswordResetConfirmView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user = serializer.validated_data['user']
-        new_password = serializer.validated_data['new_password']
+        user = serializer.validated_data["user"]
+        new_password = serializer.validated_data["new_password"]
 
         # Set the new password
         user.set_password(new_password)
         user.save()
 
         return Response(
-            {'detail': _('Password has been reset successfully.')},
-            status=status.HTTP_200_OK
+            {"detail": _("Password has been reset successfully.")},
+            status=status.HTTP_200_OK,
         )

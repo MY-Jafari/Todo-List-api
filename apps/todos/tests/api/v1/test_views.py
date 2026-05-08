@@ -4,7 +4,6 @@ API tests for the todos endpoints v1.
 Tests cover CRUD operations for Lists and Tasks.
 """
 
-from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
@@ -20,8 +19,7 @@ class ListAPITests(APITestCase):
     def setUp(self):
         """Create user, authenticate, and set up URLs."""
         self.user = User.objects.create_user(
-            phone_number="09123456789",
-            password="testpass123"
+            phone_number="09123456789", password="testpass123"
         )
         self.client.force_authenticate(user=self.user)
 
@@ -31,9 +29,7 @@ class ListAPITests(APITestCase):
     def test_create_list_success(self):
         """Test creating a list returns 201."""
         response = self.client.post(
-            self.list_list_url,
-            {"list_name": "My Tasks"},
-            format="json"
+            self.list_list_url, {"list_name": "My Tasks"}, format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["list_name"], "My Tasks")
@@ -62,7 +58,7 @@ class ListAPITests(APITestCase):
         response = self.client.patch(
             self.list_detail_url(todo_list.list_id),
             {"list_name": "New Name"},
-            format="json"
+            format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["list_name"], "New Name")
@@ -85,13 +81,14 @@ class ListAPITests(APITestCase):
     def test_access_other_users_list_returns_403_or_404(self):
         """Test that users cannot access another user's list."""
         user2 = User.objects.create_user(
-            phone_number="09234567890",
-            password="otherpass"
+            phone_number="09234567890", password="otherpass"
         )
         other_list = List.objects.create(user=user2, list_name="Private List")
 
         response = self.client.get(self.list_detail_url(other_list.list_id))
-        self.assertIn(response.status_code, [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND])
+        self.assertIn(
+            response.status_code, [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
+        )
 
 
 class TaskAPITests(APITestCase):
@@ -100,8 +97,7 @@ class TaskAPITests(APITestCase):
     def setUp(self):
         """Create user, list, authenticate, and set up URLs."""
         self.user = User.objects.create_user(
-            phone_number="09123456789",
-            password="testpass123"
+            phone_number="09123456789", password="testpass123"
         )
         self.client.force_authenticate(user=self.user)
 
@@ -118,7 +114,7 @@ class TaskAPITests(APITestCase):
                 "task_title": "Buy milk",
                 "task_description": "2% milk",
             },
-            format="json"
+            format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["task_title"], "Buy milk")
@@ -126,12 +122,8 @@ class TaskAPITests(APITestCase):
 
     def test_get_task_list(self):
         """Test retrieving list of tasks."""
-        Task.objects.create(
-            user=self.user, list=self.todo_list, task_title="Task 1"
-        )
-        Task.objects.create(
-            user=self.user, list=self.todo_list, task_title="Task 2"
-        )
+        Task.objects.create(user=self.user, list=self.todo_list, task_title="Task 1")
+        Task.objects.create(user=self.user, list=self.todo_list, task_title="Task 2")
 
         response = self.client.get(self.task_list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -144,9 +136,7 @@ class TaskAPITests(APITestCase):
         )
 
         response = self.client.patch(
-            self.task_detail_url(task.task_id),
-            {"status": "done"},
-            format="json"
+            self.task_detail_url(task.task_id), {"status": "done"}, format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], "done")
@@ -171,8 +161,7 @@ class TaskAPITests(APITestCase):
     def test_access_other_users_task_returns_403_or_404(self):
         """Test that users cannot access another user's task."""
         user2 = User.objects.create_user(
-            phone_number="09234567890",
-            password="otherpass"
+            phone_number="09234567890", password="otherpass"
         )
         other_list = List.objects.create(user=user2, list_name="Their List")
         other_task = Task.objects.create(
@@ -180,7 +169,9 @@ class TaskAPITests(APITestCase):
         )
 
         response = self.client.get(self.task_detail_url(other_task.task_id))
-        self.assertIn(response.status_code, [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND])
+        self.assertIn(
+            response.status_code, [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND]
+        )
 
     def test_task_default_priority_is_medium(self):
         """Test that a task has 'medium' priority by default."""
@@ -190,155 +181,45 @@ class TaskAPITests(APITestCase):
                 "list": self.todo_list.list_id,
                 "task_title": "Default priority",
             },
-            format="json"
+            format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["priority"], "medium")
 
-class TaskFilterAndEdgeCaseTests(APITestCase):
-    """Test suite for task filtering, validation, and edge cases."""
 
-    def setUp(self):
-        """Create users, lists, and tasks for filter tests."""
-        self.user = User.objects.create_user(
-            phone_number="09123456789",
-            password="testpass123"
-        )
-        self.client.force_authenticate(user=self.user)
-
-        self.todo_list = List.objects.create(user=self.user, list_name="Test List")
-        
-        # Create tasks with different priorities and statuses
-        Task.objects.create(
-            user=self.user, list=self.todo_list,
-            task_title="High priority task", priority="high", status="todo"
-        )
-        Task.objects.create(
-            user=self.user, list=self.todo_list,
-            task_title="Low priority task", priority="low", status="done"
-        )
-        Task.objects.create(
-            user=self.user, list=self.todo_list,
-            task_title="In progress task", priority="medium", status="inprogress"
-        )
-
-        self.task_list_url = "/api/v1/todos/tasks/"
-
-    def test_task_filter_by_priority(self):
-        """Test filtering tasks by priority."""
-        # Filter high priority
-        response = self.client.get(f"{self.task_list_url}?priority=high")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["task_title"], "High priority task")
-
-        # Filter low priority
-        response = self.client.get(f"{self.task_list_url}?priority=low")
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["task_title"], "Low priority task")
-
-    def test_task_filter_by_status(self):
-        """Test filtering tasks by status."""
-        # Filter done tasks
-        response = self.client.get(f"{self.task_list_url}?status=done")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["task_title"], "Low priority task")
-
-        # Filter inprogress tasks
-        response = self.client.get(f"{self.task_list_url}?status=inprogress")
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["task_title"], "In progress task")
-
-    def test_task_filter_by_list(self):
-        """Test filtering tasks by list ID."""
-        # Create another list with tasks
-        other_list = List.objects.create(user=self.user, list_name="Other List")
-        Task.objects.create(
-            user=self.user, list=other_list,
-            task_title="Other list task", priority="medium"
-        )
-
-        # Filter by first list
-        response = self.client.get(f"{self.task_list_url}?list={self.todo_list.list_id}")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 3)  # Only tasks from first list
-
-    def test_create_task_with_other_users_list_returns_403(self):
-        """Test that you cannot create a task in another user's list."""
-        # Create another user and their list
-        user2 = User.objects.create_user(
-            phone_number="09234567890", password="otherpass"
-        )
-        other_list = List.objects.create(user=user2, list_name="Their List")
-
-        # Try to create task in other user's list
-        response = self.client.post(
-            self.task_list_url,
-            {
-                "list": other_list.list_id,
-                "task_title": "Should fail",
-            },
-            format="json"
-        )
-        # Should be forbidden or bad request
-        self.assertIn(
-            response.status_code,
-            [status.HTTP_403_FORBIDDEN, status.HTTP_400_BAD_REQUEST]
-        )
-
-    def test_list_pagination(self):
-        """Test that list endpoint supports pagination."""
-        # Create 15 lists (assuming page size is 10)
-        for i in range(15):
-            List.objects.create(user=self.user, list_name=f"List {i}")
-
-        response = self.client.get("/api/v1/todos/lists/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # If paginated, response should have 'results' key
-        if "results" in response.data:
-            self.assertLessEqual(len(response.data["results"]), 10)
-            self.assertIn("next", response.data)
-        else:
-            # If not paginated, should have all 15
-            self.assertGreaterEqual(len(response.data), 15)
-
-    def test_task_ordering_by_created_at(self):
-        """Test that tasks are ordered by created_at (newest first)."""
-        # The tasks from setUp are already created, check ordering
-        response = self.client.get(self.task_list_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # The last created task should be first
-        task_titles = [t["task_title"] for t in response.data]
-        # Verify newest first (reverse order of creation)
-        self.assertEqual(task_titles[0], "In progress task")
 class TaskFilterAndEdgeCaseTests(APITestCase):
     """Test suite for task filtering, ordering, and edge cases."""
 
     def setUp(self):
         """Create users, lists, and tasks for filter tests."""
         self.user = User.objects.create_user(
-            phone_number="09123456789",
-            password="testpass123"
+            phone_number="09123456789", password="testpass123"
         )
         self.client.force_authenticate(user=self.user)
 
         self.todo_list = List.objects.create(user=self.user, list_name="Test List")
-        
+
         # Create tasks with different priorities and statuses
         self.task1 = Task.objects.create(
-            user=self.user, list=self.todo_list,
-            task_title="High priority task", priority="high", status="todo"
+            user=self.user,
+            list=self.todo_list,
+            task_title="High priority task",
+            priority="high",
+            status="todo",
         )
         self.task2 = Task.objects.create(
-            user=self.user, list=self.todo_list,
-            task_title="Low priority task", priority="low", status="done"
+            user=self.user,
+            list=self.todo_list,
+            task_title="Low priority task",
+            priority="low",
+            status="done",
         )
         self.task3 = Task.objects.create(
-            user=self.user, list=self.todo_list,
-            task_title="In progress task", priority="medium", status="inprogress"
+            user=self.user,
+            list=self.todo_list,
+            task_title="In progress task",
+            priority="medium",
+            status="inprogress",
         )
 
         self.task_list_url = "/api/v1/todos/tasks/"
@@ -360,7 +241,7 @@ class TaskFilterAndEdgeCaseTests(APITestCase):
         """Test filtering tasks by priority."""
         response = self.client.get(f"{self.task_list_url}?priority=high")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         results = self._get_results(response)
         task_titles = [t["task_title"] for t in results]
         self.assertIn("High priority task", task_titles)
@@ -370,7 +251,7 @@ class TaskFilterAndEdgeCaseTests(APITestCase):
         """Test filtering tasks by status."""
         response = self.client.get(f"{self.task_list_url}?status=done")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         results = self._get_results(response)
         task_titles = [t["task_title"] for t in results]
         self.assertIn("Low priority task", task_titles)
@@ -381,14 +262,18 @@ class TaskFilterAndEdgeCaseTests(APITestCase):
         # Create a second list with a task in it
         other_list = List.objects.create(user=self.user, list_name="Other List")
         Task.objects.create(
-            user=self.user, list=other_list,
-            task_title="Other list task", priority="medium"
+            user=self.user,
+            list=other_list,
+            task_title="Other list task",
+            priority="medium",
         )
 
         # Filter by the first list
-        response = self.client.get(f"{self.task_list_url}?list={self.todo_list.list_id}")
+        response = self.client.get(
+            f"{self.task_list_url}?list={self.todo_list.list_id}"
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         results = self._get_results(response)
         task_titles = [t["task_title"] for t in results]
         self.assertIn("High priority task", task_titles)
@@ -407,11 +292,11 @@ class TaskFilterAndEdgeCaseTests(APITestCase):
                 "list": other_list.list_id,
                 "task_title": "Should fail",
             },
-            format="json"
+            format="json",
         )
         self.assertIn(
             response.status_code,
-            [status.HTTP_403_FORBIDDEN, status.HTTP_400_BAD_REQUEST]
+            [status.HTTP_403_FORBIDDEN, status.HTTP_400_BAD_REQUEST],
         )
 
     def test_list_pagination(self):
@@ -422,7 +307,7 @@ class TaskFilterAndEdgeCaseTests(APITestCase):
 
         response = self.client.get("/api/v1/todos/lists/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         # Check pagination structure
         if hasattr(response.data, "get"):
             self.assertIn("results", response.data)
@@ -436,14 +321,15 @@ class TaskFilterAndEdgeCaseTests(APITestCase):
         """Test task ordering (newest first, page_size=5)."""
         response = self.client.get(self.task_list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         results = self._get_results(response)
         self.assertGreaterEqual(len(results), 1)
-        
+
         # Newest task should be "In progress task" (created last in setUp)
         task_titles = [t["task_title"] for t in results]
         # The newest of the 3 tasks we created
         self.assertTrue(
-            task_titles[0] in ["In progress task", "Low priority task", "High priority task"],
-            f"First task should be one of our tasks, got: {task_titles[0]}"
-        )   
+            task_titles[0]
+            in ["In progress task", "Low priority task", "High priority task"],
+            f"First task should be one of our tasks, got: {task_titles[0]}",
+        )

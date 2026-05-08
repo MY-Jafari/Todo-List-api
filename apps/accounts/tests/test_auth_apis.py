@@ -7,8 +7,6 @@ Covers registration (send-otp, verify-otp-register) and login flows.
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from datetime import timedelta
-from django.utils import timezone
 from apps.accounts.models import User, PhoneVerification
 
 
@@ -27,36 +25,35 @@ class RegistrationAPITests(APITestCase):
         self.verify_register_url = reverse("accounts-v1:verify-otp-register")
         self.valid_phone = "09123456789"
 
-    #  Helper Methods 
+    #  Helper Methods
 
     def _request_otp(self, phone_number="09123456789"):
         """
         Helper: Request OTP and return both the verification_token
         and the OTP code from the created verification record.
-        
+
         Returns:
             tuple: (verification_token, otp_code)
         """
         response = self.client.post(
-            self.send_otp_url,
-            {"phone_number": phone_number},
-            format="json"
+            self.send_otp_url, {"phone_number": phone_number}, format="json"
         )
         token = response.data["verification_token"]
 
         # Get the code from the latest pending verification
         verification = PhoneVerification.objects.filter(
             phone_number=phone_number, verified=False
-        ).latest('created_at')
+        ).latest("created_at")
 
         # Generate the current TOTP code from the secret
         import pyotp
+
         totp = pyotp.TOTP(verification.secret, interval=120)
         code = totp.now()
 
         return token, code
 
-    #  Send OTP Tests 
+    #  Send OTP Tests
 
     def test_send_otp_success(self):
         """
@@ -64,9 +61,7 @@ class RegistrationAPITests(APITestCase):
         Should return 200 OK with a verification_token.
         """
         response = self.client.post(
-            self.send_otp_url,
-            {"phone_number": self.valid_phone},
-            format="json"
+            self.send_otp_url, {"phone_number": self.valid_phone}, format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("verification_token", response.data)
@@ -84,14 +79,10 @@ class RegistrationAPITests(APITestCase):
         Test that requesting OTP for an already registered number fails.
         """
         # Create a user first
-        User.objects.create_user(
-            phone_number=self.valid_phone, password="testpass"
-        )
+        User.objects.create_user(phone_number=self.valid_phone, password="testpass")
 
         response = self.client.post(
-            self.send_otp_url,
-            {"phone_number": self.valid_phone},
-            format="json"
+            self.send_otp_url, {"phone_number": self.valid_phone}, format="json"
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -100,25 +91,24 @@ class RegistrationAPITests(APITestCase):
         Test that invalid Iranian phone numbers are rejected.
         """
         invalid_numbers = [
-            "0912345678",    # 10 digits
+            "0912345678",  # 10 digits
             "091234567890",  # 12 digits
-            "+989123456789", # with country code
-            "08123456789",   # doesn't start with 09
-            "abc",           # not even a number
+            "+989123456789",  # with country code
+            "08123456789",  # doesn't start with 09
+            "abc",  # not even a number
         ]
 
         for phone in invalid_numbers:
             response = self.client.post(
-                self.send_otp_url,
-                {"phone_number": phone},
-                format="json"
+                self.send_otp_url, {"phone_number": phone}, format="json"
             )
             self.assertEqual(
-                response.status_code, status.HTTP_400_BAD_REQUEST,
-                f"Expected 400 for phone: {phone}"
+                response.status_code,
+                status.HTTP_400_BAD_REQUEST,
+                f"Expected 400 for phone: {phone}",
             )
 
-    #  Verify OTP & Register Tests 
+    #  Verify OTP & Register Tests
 
     def test_verify_otp_register_success(self):
         """
@@ -136,7 +126,7 @@ class RegistrationAPITests(APITestCase):
                 "email": "test@example.com",
                 "full_name": "Test User",
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -164,7 +154,7 @@ class RegistrationAPITests(APITestCase):
                 "otp_code": "000000",  # Wrong code
                 "password": "securepass123",
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -180,7 +170,7 @@ class RegistrationAPITests(APITestCase):
                 "otp_code": "000000",
                 "password": "securepass123",
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -198,7 +188,7 @@ class RegistrationAPITests(APITestCase):
                 "otp_code": code,
                 "password": "123",  # Too short (min 6 chars)
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -216,7 +206,7 @@ class RegistrationAPITests(APITestCase):
                 "otp_code": code,
                 "password": "securepass123",
             },
-            format="json"
+            format="json",
         )
 
         user = User.objects.get(phone_number=self.valid_phone)
@@ -225,10 +215,11 @@ class RegistrationAPITests(APITestCase):
         self.assertFalse(user.is_staff)
         self.assertFalse(user.is_superuser)
 
+
 class LoginAPITests(APITestCase):
     """
     Test suite for login endpoints.
-    
+
     Covers:
     1. Password-based login
     2. OTP-based login (send-login-otp + verify-login-otp)
@@ -247,10 +238,10 @@ class LoginAPITests(APITestCase):
             phone_number=self.phone_number,
             password=self.password,
             full_name="Test User",
-            is_phone_verified=True
+            is_phone_verified=True,
         )
 
-    #  Password Login Tests 
+    #  Password Login Tests
 
     def test_login_with_password_success(self):
         """
@@ -263,7 +254,7 @@ class LoginAPITests(APITestCase):
                 "phone_number": self.phone_number,
                 "password": self.password,
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -283,7 +274,7 @@ class LoginAPITests(APITestCase):
                 "phone_number": self.phone_number,
                 "password": "wrongpassword",
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -298,7 +289,7 @@ class LoginAPITests(APITestCase):
                 "phone_number": "09999999999",
                 "password": "somepass",
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -313,21 +304,19 @@ class LoginAPITests(APITestCase):
                 "phone_number": self.phone_number,
                 # password missing
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    #  OTP Login Tests 
+    #  OTP Login Tests
 
     def test_send_login_otp_success(self):
         """
         Test that requesting login OTP for a registered user succeeds.
         """
         response = self.client.post(
-            self.send_login_otp_url,
-            {"phone_number": self.phone_number},
-            format="json"
+            self.send_login_otp_url, {"phone_number": self.phone_number}, format="json"
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -338,9 +327,7 @@ class LoginAPITests(APITestCase):
         Test that requesting login OTP for unregistered number fails.
         """
         response = self.client.post(
-            self.send_login_otp_url,
-            {"phone_number": "09999999999"},
-            format="json"
+            self.send_login_otp_url, {"phone_number": "09999999999"}, format="json"
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -351,17 +338,16 @@ class LoginAPITests(APITestCase):
         """
         # Step 1: Request login OTP
         response = self.client.post(
-            self.send_login_otp_url,
-            {"phone_number": self.phone_number},
-            format="json"
+            self.send_login_otp_url, {"phone_number": self.phone_number}, format="json"
         )
         token = response.data["verification_token"]
 
         # Get the OTP code from the latest verification
         import pyotp
+
         verification = PhoneVerification.objects.filter(
             phone_number=self.phone_number, verified=False
-        ).latest('created_at')
+        ).latest("created_at")
         totp = pyotp.TOTP(verification.secret, interval=120)
         code = totp.now()
 
@@ -372,7 +358,7 @@ class LoginAPITests(APITestCase):
                 "verification_token": token,
                 "otp_code": code,
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -386,9 +372,7 @@ class LoginAPITests(APITestCase):
         Test that wrong OTP code for login fails.
         """
         response = self.client.post(
-            self.send_login_otp_url,
-            {"phone_number": self.phone_number},
-            format="json"
+            self.send_login_otp_url, {"phone_number": self.phone_number}, format="json"
         )
         token = response.data["verification_token"]
 
@@ -398,10 +382,11 @@ class LoginAPITests(APITestCase):
                 "verification_token": token,
                 "otp_code": "000000",  # Wrong
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
 
 class EmailVerificationAPITests(APITestCase):
     """
@@ -416,9 +401,7 @@ class EmailVerificationAPITests(APITestCase):
 
         # Create and authenticate user
         self.user = User.objects.create_user(
-            phone_number="09123456789",
-            password="testpass123",
-            is_phone_verified=True
+            phone_number="09123456789", password="testpass123", is_phone_verified=True
         )
         self.client.force_authenticate(user=self.user)
 
@@ -428,9 +411,7 @@ class EmailVerificationAPITests(APITestCase):
         Should return 200 OK.
         """
         response = self.client.post(
-            self.send_email_url,
-            {"email": "test@example.com"},
-            format="json"
+            self.send_email_url, {"email": "test@example.com"}, format="json"
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -444,9 +425,7 @@ class EmailVerificationAPITests(APITestCase):
         self.client.force_authenticate(user=None)
 
         response = self.client.post(
-            self.send_email_url,
-            {"email": "test@example.com"},
-            format="json"
+            self.send_email_url, {"email": "test@example.com"}, format="json"
         )
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -459,8 +438,7 @@ class EmailVerificationAPITests(APITestCase):
 
         # Generate verification code
         verification, code = EmailVerification.generate(
-            email="verify@example.com",
-            user=self.user
+            email="verify@example.com", user=self.user
         )
 
         response = self.client.post(
@@ -469,7 +447,7 @@ class EmailVerificationAPITests(APITestCase):
                 "email": "verify@example.com",
                 "code": code,
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -490,7 +468,7 @@ class EmailVerificationAPITests(APITestCase):
                 "email": "test@example.com",
                 "code": "000000",
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -511,7 +489,7 @@ class PasswordResetAPITests(APITestCase):
         self.user = User.objects.create_user(
             phone_number=self.phone_number,
             password="oldpassword123",
-            is_phone_verified=True
+            is_phone_verified=True,
         )
 
     def test_password_reset_request_success(self):
@@ -520,9 +498,7 @@ class PasswordResetAPITests(APITestCase):
         Should return 200 with verification_token.
         """
         response = self.client.post(
-            self.request_url,
-            {"phone_number": self.phone_number},
-            format="json"
+            self.request_url, {"phone_number": self.phone_number}, format="json"
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -533,9 +509,7 @@ class PasswordResetAPITests(APITestCase):
         Test requesting reset for unregistered number fails.
         """
         response = self.client.post(
-            self.request_url,
-            {"phone_number": "09999999999"},
-            format="json"
+            self.request_url, {"phone_number": "09999999999"}, format="json"
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -549,16 +523,14 @@ class PasswordResetAPITests(APITestCase):
 
         # Step 1: Request reset
         response = self.client.post(
-            self.request_url,
-            {"phone_number": self.phone_number},
-            format="json"
+            self.request_url, {"phone_number": self.phone_number}, format="json"
         )
         token = response.data["verification_token"]
 
         # Get the OTP code
         verification = PhoneVerification.objects.filter(
             phone_number=self.phone_number, verified=False
-        ).latest('created_at')
+        ).latest("created_at")
         totp = pyotp.TOTP(verification.secret, interval=120)
         code = totp.now()
 
@@ -571,7 +543,7 @@ class PasswordResetAPITests(APITestCase):
                 "otp_code": code,
                 "new_password": new_password,
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -584,7 +556,7 @@ class PasswordResetAPITests(APITestCase):
                 "phone_number": self.phone_number,
                 "password": new_password,
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(login_response.status_code, status.HTTP_200_OK)
@@ -594,9 +566,7 @@ class PasswordResetAPITests(APITestCase):
         Test reset confirmation with wrong code fails.
         """
         response = self.client.post(
-            self.request_url,
-            {"phone_number": self.phone_number},
-            format="json"
+            self.request_url, {"phone_number": self.phone_number}, format="json"
         )
         token = response.data["verification_token"]
 
@@ -607,15 +577,16 @@ class PasswordResetAPITests(APITestCase):
                 "otp_code": "000000",
                 "new_password": "newpass123",
             },
-            format="json"
+            format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+
 class RateLimitingTests(APITestCase):
     """
     Test suite for OTP rate limiting.
-    
+
     Ensures that users cannot request OTP codes more than once
     within the cooldown period (2 minutes).
     """
@@ -631,17 +602,13 @@ class RateLimitingTests(APITestCase):
         """
         # First request should succeed
         response1 = self.client.post(
-            self.send_otp_url,
-            {"phone_number": self.valid_phone},
-            format="json"
+            self.send_otp_url, {"phone_number": self.valid_phone}, format="json"
         )
         self.assertEqual(response1.status_code, status.HTTP_200_OK)
 
         # Second request immediately after should fail with 429
         response2 = self.client.post(
-            self.send_otp_url,
-            {"phone_number": self.valid_phone},
-            format="json"
+            self.send_otp_url, {"phone_number": self.valid_phone}, format="json"
         )
         self.assertEqual(response2.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
         self.assertIn("detail", response2.data)
@@ -652,20 +619,21 @@ class RateLimitingTests(APITestCase):
         Test that login with invalid phone format is rejected.
         """
         login_url = reverse("accounts-v1:login")
-        
+
         invalid_phones = [
-            "0912345678",    # 10 digits
+            "0912345678",  # 10 digits
             "091234567890",  # 12 digits
-            "08123456789",   # doesn't start with 09
+            "08123456789",  # doesn't start with 09
         ]
 
         for phone in invalid_phones:
             response = self.client.post(
                 login_url,
                 {"phone_number": phone, "password": "testpass123"},
-                format="json"
+                format="json",
             )
             self.assertEqual(
-                response.status_code, status.HTTP_400_BAD_REQUEST,
-                f"Expected 400 for phone: {phone}"
+                response.status_code,
+                status.HTTP_400_BAD_REQUEST,
+                f"Expected 400 for phone: {phone}",
             )
