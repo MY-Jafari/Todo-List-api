@@ -18,4 +18,8 @@ urlpatterns = [
     # Login (OTP)
     path('send-login-otp/', views.SendLoginOTPView.as_view(), name='send-login-otp'),
     path('verify-login-otp/', views.VerifyLoginOTPView.as_view(), name='verify-login-otp'),
+
+    # Email verification
+    path('send-email-verification/', views.SendEmailVerificationView.as_view(), name='send-email-verification'),
+    path('verify-email/', views.VerifyEmailView.as_view(), name='verify-email'),
 ]

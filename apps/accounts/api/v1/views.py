@@ -12,11 +12,15 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model, authenticate
+from apps.accounts.models import PhoneVerification, EmailVerification
+from apps.accounts.notifications import send_phone_verification_code, send_email_verification_code
 
 from apps.accounts.models import PhoneVerification
 from apps.accounts.notifications import send_phone_verification_code
 from .serializers import (
+    SendEmailVerificationSerializer,
     SendOTPSerializer,
+    VerifyEmailSerializer,
     VerifyOTPAndRegisterSerializer,
     SendLoginOTPSerializer,
     VerifyLoginOTPSerializer,
@@ -309,5 +313,76 @@ class LoginView(generics.GenericAPIView):
                 },
                 'tokens': tokens,
             },
+            status=status.HTTP_200_OK
+        )
+class SendEmailVerificationView(generics.GenericAPIView):
+    """
+    Send a verification code to the user's email address.
+
+    POST /api/v1/auth/send-email-verification/
+
+    Requires authentication. The user must be logged in.
+
+    Request Body:
+        {"email": "user@example.com"}
+
+    Response (200 OK):
+        {"detail": "Verification code sent."}
+    """
+    serializer_class = SendEmailVerificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        """Handle email verification code sending."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data['email']
+
+        # Generate verification code and send email
+        verification, code = EmailVerification.generate(
+            email=email,
+            user=request.user
+        )
+        send_email_verification_code(email, code)
+
+        return Response(
+            {'detail': _('Verification code sent to your email.')},
+            status=status.HTTP_200_OK
+        )
+
+
+class VerifyEmailView(generics.GenericAPIView):
+    """
+    Verify email address with the sent code.
+
+    POST /api/v1/auth/verify-email/
+
+    Requires authentication.
+
+    Request Body:
+        {"email": "user@example.com", "code": "123456"}
+
+    Response (200 OK):
+        {"detail": "Email verified successfully."}
+    """
+    serializer_class = VerifyEmailSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        """Handle email verification."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data['email']
+
+        # Update user's email verification status
+        user = request.user
+        user.email = email
+        user.email_verified = True
+        user.save(update_fields=['email', 'email_verified'])
+
+        return Response(
+            {'detail': _('Email verified successfully.')},
             status=status.HTTP_200_OK
         )

@@ -297,3 +297,106 @@ class LoginSerializer(serializers.Serializer):
             )
 
         return value
+
+class SendEmailVerificationSerializer(serializers.Serializer):
+    """
+    Serializer for requesting an email verification code.
+
+    Validates that the email is not already taken by another user.
+    Requires authentication - the user must be logged in.
+    """
+    email = serializers.EmailField(
+        help_text=_('Email address to verify.')
+    )
+
+    def validate_email(self, value):
+        """
+        Check that the email is not already used by another verified user.
+
+        Args:
+            value (str): The email address to validate.
+
+        Returns:
+            str: The validated email address.
+
+        Raises:
+            serializers.ValidationError: If email is already taken
+                or user is not authenticated.
+        """
+        user = self.context['request'].user
+
+        # Ensure user is authenticated
+        if user.is_anonymous:
+            raise serializers.ValidationError(
+                _('Authentication is required.')
+            )
+
+        # Check if any other user has this email verified
+        if User.objects.filter(email=value).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError(
+                _('This email is already registered by another user.')
+            )
+
+        return value
+
+
+class VerifyEmailSerializer(serializers.Serializer):
+    """
+    Serializer for verifying an email verification code.
+
+    Validates the code against the stored EmailVerification record.
+    """
+    email = serializers.EmailField(
+        help_text=_('Email address being verified.')
+    )
+    code = serializers.CharField(
+        max_length=6,
+        min_length=6,
+        help_text=_('6-digit verification code sent to the email.')
+    )
+
+    def validate(self, data):
+        """
+        Verify the code against the stored EmailVerification record.
+
+        Args:
+            data (dict): Input data with email and code.
+
+        Returns:
+            dict: The validated data.
+
+        Raises:
+            serializers.ValidationError: If code is invalid, expired,
+                or user is not authenticated.
+        """
+        from apps.accounts.models import EmailVerification
+
+        user = self.context['request'].user
+
+        # Ensure user is authenticated
+        if user.is_anonymous:
+            raise serializers.ValidationError(
+                _('Authentication is required.')
+            )
+
+        email = data['email']
+        code = data['code']
+
+        try:
+            verification = EmailVerification.objects.filter(
+                email=email,
+                user=user,
+                is_used=False
+            ).latest('created_at')
+        except EmailVerification.DoesNotExist:
+            raise serializers.ValidationError(
+                _('No verification code found for this email. '
+                  'Please request a new code.')
+            )
+
+        if not verification.verify_code(code):
+            raise serializers.ValidationError(
+                _('Invalid or expired verification code.')
+            )
+
+        return data
