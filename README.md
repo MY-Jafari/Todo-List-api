@@ -89,53 +89,7 @@ backed by **85 automated tests**.
 
 ---
 
-## 📁 ساختار پروژه | Project Structure
 
-Todo-List-api/
-├── apps/ # Django Applications
-│ ├── accounts/ # 🔐 Auth App (Custom User + Verification)
-│ │ ├── api/v1/ # API version 1
-│ │ │ ├── serializers.py # Auth serializers (8 classes)
-│ │ │ ├── views.py # Auth views (9 endpoints)
-│ │ │ └── urls.py # Auth routes (/api/v1/auth/)
-│ │ ├── tests/ # Auth test suite
-│ │ │ ├── test_models.py # 30 model tests
-│ │ │ └── test_auth_apis.py # 26 API tests
-│ │ ├── models.py # User, PhoneVerification, EmailVerification
-│ │ ├── notifications.py # SMS/Email notification layer
-│ │ ├── admin.py # Admin panel configuration
-│ │ └── templates/ # Email HTML templates
-│ └── todos/ # ✅ Todo App
-│ ├── api/v1/ # API version 1
-│ │ ├── serializers.py # List & Task serializers
-│ │ ├── views.py # CRUD views
-│ │ └── urls.py # Todo routes (/api/v1/todos/)
-│ ├── tests/ # Todo test suite
-│ │ ├── test_models.py # 8 model tests
-│ │ └── api/v1/ # 21 API tests
-│ │ └── test_views.py
-│ ├── models.py # List & Task models
-│ └── filters.py # TaskFilter
-├── core/ # Django Project Config
-│ ├── settings.py # Settings (from env vars)
-│ ├── urls.py # Main URL config + Swagger
-│ ├── wsgi.py
-│ └── asgi.py
-├── nginx/ # Nginx configuration
-│ └── default.conf
-├── docker-compose.yml # Docker Compose (PostgreSQL + Web + Nginx)
-├── Dockerfile # Multi-stage Docker image
-├── requirements.txt # Production Python dependencies
-├── requirements-dev.txt # Development dependencies (test, lint)
-├── pytest.ini # Pytest configuration
-├── .env.example # Environment variables template
-├── .flake8 # Flake8 linting rules
-├── manage.py
-└── README.md
-text
-
-
----
 
 ## 🚀 نصب و راه‌اندازی | Installation
 
