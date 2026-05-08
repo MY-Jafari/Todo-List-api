@@ -1,404 +1,460 @@
-<div align="center">
-
 ![Django](https://img.shields.io/badge/Django-5.2-092E20?style=for-the-badge&logo=django&logoColor=white)
 ![DRF](https://img.shields.io/badge/DRF-3.16-CC2927?style=for-the-badge&logo=django&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=for-the-badge&logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-🐳-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
+![Gunicorn](https://img.shields.io/badge/Gunicorn-499848?style=for-the-badge&logo=gunicorn&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![TOTP](https://img.shields.io/badge/TOTP-2FA-4CAF50?style=for-the-badge&logo=authenticator&logoColor=white)
 ![Swagger](https://img.shields.io/badge/Swagger-Docs-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
-![Redis](https://img.shields.io/badge/Redis-Cache-DC382D?style=for-the-badge&logo=redis&logoColor=white)
-![Pytest](https://img.shields.io/badge/Pytest-Tests-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)
+![Pytest](https://img.shields.io/badge/Pytest-85_Tests-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)
 
 [![License](https://img.shields.io/github/license/MY-Jafari/Todo-List-api?style=flat-square)](https://github.com/MY-Jafari/Todo-List-api/blob/main/LICENSE)
 [![Stars](https://img.shields.io/github/stars/MY-Jafari/Todo-List-api?style=flat-square)](https://github.com/MY-Jafari/Todo-List-api/stargazers)
 [![Last Commit](https://img.shields.io/github/last-commit/MY-Jafari/Todo-List-api?style=flat-square)](https://github.com/MY-Jafari/Todo-List-api/commits/main)
+[![Tests](https://img.shields.io/badge/tests-85%20passed-success?style=flat-square)]()
 
-</div>
+---
 
-# 📖 درباره پروژه | About The Project
+# 📝 درباره پروژه | About The Project
 
-Todo List API یک پروژه بک‌اند مبتنی بر Django REST Framework است که امکان مدیریت لیست‌های کار (Todo Lists) و وظایف (Tasks) را از طریق REST API فراهم می‌کند. این پروژه به عنوان اولین تجربه کاری من در زمینه Django و توسعه API طراحی و پیاده‌سازی شده است.
-### ✨ ویژگی‌های کلیدی
+**Todo List API** یک پروژه بکاند کامل و حرفه‌ای مبتنی بر Django REST Framework است که علاوه بر
+مدیریت لیست‌های کار (Todo Lists) و وظایف (Tasks) از طریق REST API، یک **سیستم احراز هویت
+سفارشی کامل از صفر** را نیز پیاده‌سازی می‌کند. ویژگی‌های امنیتی مانند احراز هویت دومرحله‌ای
+با **TOTP (Time-based One-Time Password)**، تأیید ایمیل با **هش SHA256**، و ورود ترکیبی
+(رمز عبور + کد OTP) از نقاط قوت این پروژه هستند. کل پروژه با **Docker** و **Nginx** روی
+**PostgreSQL** قابل اجراست و با **۸۵ تست خودکار** پوشش داده شده است.
 
-- **احراز هویت JWT** — ورود، ثبت‌نام و مدیریت نشست کاربران با JSON Web Token
+**Todo List API** is a full-featured, production-ready Django REST Framework backend that
+manages todo lists and tasks through a RESTful API. It also implements a **fully custom
+authentication system from scratch**—built on `AbstractBaseUser`—featuring **TOTP-based
+two-factor phone verification**, **SHA256-hashed email verification**, hybrid login
+(password + OTP), rate limiting, and a complete password reset flow. The entire project
+is containerized with **Docker**, served via **Nginx + Gunicorn** on **PostgreSQL**, and
+backed by **85 automated tests**.
+
+---
+
+## ✨ ویژگی‌های کلیدی | Key Features
+
+### 🔐 احراز هویت | Authentication
+- **ثبت‌نام با موبایل** — ثبت‌نام فقط با شماره موبایل (اعتبارسنجی ۱۱ رقمی ایرانی: `09xxxxxxxxx`)
+- **کد TOTP بلادرنگ** — استفاده از `pyotp` برای تولید کدهای ۶ رقمی بر اساس زمان (بدون ذخیره در دیتابیس)
+- **JWT Verification Token** — انتقال امن وضعیت تأیید بین مراحل ثبت‌نام با JWT موقت (بدون نیاز به Session)
+- **لاگین ترکیبی (Hybrid Login)** — ورود با **رمز عبور** (پیش‌فرض) **یا** کد OTP
+- **ورود بدون رمز (Passwordless)** — ورود با درخواست کد OTP در دو مرحله (`send-login-otp` + `verify-login-otp`)
+- **تأیید ایمیل** — ارسال کد به ایمیل با قالب HTML (SHA256 hashed storage)
+- **فراموشی رمز** — بازیابی رمز عبور با کد OTP (اولویت با شماره موبایل)
+- **Rate Limiting** — محدودیت ۲ دقیقه‌ای بین هر درخواست OTP
+- **Custom User Model از صفر** — ساخته‌شده با `AbstractBaseUser` + `PermissionsMixin`، شناسه: `phone_number`
+
+### 📋 مدیریت تسک‌ها | Task Management
 - **مدیریت لیست‌ها** — ایجاد، مشاهده، ویرایش و حذف لیست‌های کار شخصی
 - **مدیریت وظایف** — ایجاد، مشاهده، ویرایش و حذف وظایف درون لیست‌ها
-- **فیلتر و جستجو** — فیلتر کردن وظایف بر اساس وضعیت، اولویت و جستجوی متنی
-- **صفحه‌بندی** — بازگشت خودکار نتایج به صورت صفحه‌بندی شده
-- **مستندات Swagger** — مستندات کامل API با Swagger UI و ReDoc
-- **Docker** — اجرای کامل پروژه با Docker و Nginx
-- **تست‌های خودکار** — پوشش تست برای Models، Serializers و Views با Pytest
+- **فیلتر و جستجو** — فیلتر کردن وظایف بر اساس وضعیت، اولویت، لیست و جستجوی متنی
+- **مرتب‌سازی** — مرتب‌سازی بر اساس تاریخ ایجاد، وضعیت، اولویت و عنوان
+- **صفحه‌بندی** — بازگشت خودکار نتایج به صورت صفحه‌بندی شده (۵ آیتم در هر صفحه)
+- **کنترل دسترسی** — هر کاربر فقط به لیست‌ها و تسک‌های خودش دسترسی دارد
+
+### 🛡️ امنیت | Security
+- **Non-root user** در Docker
+- **Multi-stage Docker build** برای کاهش حجم ایمیج
+- **Security headers** در Nginx
+- **Health checks** برای همه سرویس‌ها
+- **پنل ادمین کامل** — نمایش تمام اطلاعات کاربران (شماره موبایل، ایمیل، وضعیت تأیید)
+
+### 🧪 تست‌ها | Testing
+- **۸۵ تست خودکار** با Pytest
+- پوشش کامل مدل‌های `User`, `PhoneVerification`, `EmailVerification`
+- پوشش کامل تمام APIهای Auth (ثبت‌نام، لاگین، ایمیل، بازیابی رمز)
+- پوشش کامل CRUD لیست‌ها و تسک‌ها
+- تست‌های امنیتی (دسترسی غیرمجاز → 401/403)
+- تست Rate Limiting و اعتبارسنجی شماره ایرانی
 
 ---
 
+## 🛠️ تکنولوژی‌ها | Tech Stack
 
-Todo List API is a Django REST Framework backend project that enables managing todo lists and tasks through a RESTful API. This project was built as my first hands-on experience with Django and API development.
-
-### ✨ Key Features
-
-- **JWT Authentication** — Login, registration, and session management with JSON Web Tokens
-- **List Management** — Create, read, update, and delete personal todo lists
-- **Task Management** — Create, read, update, and delete tasks within lists
-- **Filtering & Search** — Filter tasks by status, priority, and full-text search
-- **Pagination** — Automatic paginated results for all list endpoints
-- **Swagger Documentation** — Interactive API docs with Swagger UI and ReDoc
-- **Docker** — Full Docker setup with Nginx reverse proxy
-- **Automated Tests** — Comprehensive test coverage using Pytest
-
----
-
-# 🛠 تکنولوژی‌ها | Tech Stack
-
-| Category | Technology |
-|---|---|
-| Framework | Django 5.2 + Django REST Framework |
-| Auth | Simple JWT (Access & Refresh Token) |
-| Database | SQLite (Dev) / PostgreSQL (Prod) |
-| Cache | Redis |
-| Web Server | Nginx + Gunicorn |
+| **دسته** | **تکنولوژی** |
+|-----------|--------------|
+| Framework | Django 5.2 + Django REST Framework 3.16 |
+| Auth | Simple JWT (Access & Refresh Token) + PyOTP (TOTP) |
+| Database | PostgreSQL 16 (Production) |
+| Web Server | Nginx (Reverse Proxy) + Gunicorn |
 | Container | Docker & Docker Compose |
 | Docs | Swagger (drf-yasg) + ReDoc |
-| Testing | Pytest + Flake8 + Black |
+| Testing | Pytest (۸۵ تست) |
+| Email | django-mail-templated (HTML templates) |
+| Filtering | django-filter |
 
 ---
 
-# 📂 ساختار پروژه | Project Structure
+## 📁 ساختار پروژه | Project Structure
 
-```
 Todo-List-api/
-├── apps/                          # Django Applications
-│   ├── todos/                     # Todo app
-│   │   ├── api/v1/                # API version 1
-│   │   │   ├── serializers.py     # Data serializers
-│   │   │   ├── views.py           # API views (CRUD)
-│   │   │   └── urls.py            # API routes
-│   │   ├── tests/                 # Test suites
-│   │   │   ├── api/v1/            # API tests
-│   │   │   ├── test_models.py     # Model tests
-│   │   │   └── test_filters.py    # Filter tests
-│   │   ├── models.py              # List & Task models
-│   │   ├── filters.py             # TaskFilter
-│   │   └── urls.py                # App routes
-│   └── users/                     # User app
-│       ├── models.py              # Custom User & Profile
-│       ├── tests/                 # User tests
-│       └── views.py               # Auth views
-├── core/                          # Django Project Config
-│   ├── settings.py                # Settings
-│   ├── urls.py                    # Main URL config + Swagger
-│   ├── wsgi.py
-│   └── asgi.py
-├── nginx/                         # Nginx configuration
-│   └── default.conf
-├── static/                        # Static files
-├── docker-compose.yml             # Docker Compose (web + redis)
-├── Dockerfile                     # Docker image definition
-├── requirements.txt               # Python dependencies
-├── pytest.ini                     # Pytest configuration
-├── .flake8                        # Flake8 linting rules
+├── apps/ # Django Applications
+│ ├── accounts/ # 🔐 Auth App (Custom User + Verification)
+│ │ ├── api/v1/ # API version 1
+│ │ │ ├── serializers.py # Auth serializers (8 classes)
+│ │ │ ├── views.py # Auth views (9 endpoints)
+│ │ │ └── urls.py # Auth routes (/api/v1/auth/)
+│ │ ├── tests/ # Auth test suite
+│ │ │ ├── test_models.py # 30 model tests
+│ │ │ └── test_auth_apis.py # 26 API tests
+│ │ ├── models.py # User, PhoneVerification, EmailVerification
+│ │ ├── notifications.py # SMS/Email notification layer
+│ │ ├── admin.py # Admin panel configuration
+│ │ └── templates/ # Email HTML templates
+│ └── todos/ # ✅ Todo App
+│ ├── api/v1/ # API version 1
+│ │ ├── serializers.py # List & Task serializers
+│ │ ├── views.py # CRUD views
+│ │ └── urls.py # Todo routes (/api/v1/todos/)
+│ ├── tests/ # Todo test suite
+│ │ ├── test_models.py # 8 model tests
+│ │ └── api/v1/ # 21 API tests
+│ │ └── test_views.py
+│ ├── models.py # List & Task models
+│ └── filters.py # TaskFilter
+├── core/ # Django Project Config
+│ ├── settings.py # Settings (from env vars)
+│ ├── urls.py # Main URL config + Swagger
+│ ├── wsgi.py
+│ └── asgi.py
+├── nginx/ # Nginx configuration
+│ └── default.conf
+├── docker-compose.yml # Docker Compose (PostgreSQL + Web + Nginx)
+├── Dockerfile # Multi-stage Docker image
+├── requirements.txt # Production Python dependencies
+├── requirements-dev.txt # Development dependencies (test, lint)
+├── pytest.ini # Pytest configuration
+├── .env.example # Environment variables template
+├── .flake8 # Flake8 linting rules
 ├── manage.py
 └── README.md
-```
+text
+
 
 ---
 
-# 🚀 نصب و راه‌اندازی | Installation
+## 🚀 نصب و راه‌اندازی | Installation
 
-## پیش‌نیازها
+### 📦 پیش‌نیازها | Prerequisites
 
-- Python 3.12+
-- Docker & Docker Compose (برای اجرا با Docker)
-- Redis (برای محیط توسعه)
-
-##  Prerequisites
-
-- Python 3.12+
-- Docker & Docker Compose (for Docker setup)
-- Redis (for development)
+- **Docker & Docker Compose** (توصیه می‌شود | Recommended)
+- Python 3.12+ (برای اجرای دستی | For manual setup)
+- PostgreSQL 16 (برای Production)
 
 ---
 
-## 🐳 روش اجرا با Docker (توصیه می‌شود)
+### 🐳 روش اجرا با Docker (توصیه می‌شود) | Docker Setup (Recommended)
 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/MY-Jafari/Todo-List-api.git
 cd Todo-List-api
 
-# 2. Create .env file
+# 2. Create .env file from template
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your configuration (see Environment Variables section below)
 
 # 3. Run with Docker Compose
-docker-compose up -d
+docker compose up -d --build
 
-# 4. Create a superuser (optional)
-docker-compose exec web python manage.py createsuperuser
+# 4. Create a superuser
+docker compose exec web python manage.py createsuperuser
 
-# 5. Open the API
-# - API: http://localhost:8000/api/v1/todos/
-# - Swagger: http://localhost:8000/swagger/
-# - ReDoc: http://localhost:8000/redoc/
-# - Admin: http://localhost:8000/admin/
-```
+# 5. Access the application
+# - Swagger UI:  http://localhost/swagger/
+# - ReDoc:       http://localhost/redoc/
+# - Admin Panel: http://localhost/admin/
+# - API:         http://localhost/api/v1/todos/
 
-## 💻 روش اجرای دستی (Local Development)
+    نکته برای کاربران داخل ایران: برای استفاده از میرورهای داخلی:
+    bash
 
-```bash
+    docker compose build --build-arg USE_IRAN_MIRRORS=true
+    docker compose up -d
+
+💻 روش اجرای دستی (توسعه محلی) | Manual Setup (Local Development)
+bash
+
 # 1. Clone the repository
 git clone https://github.com/MY-Jafari/Todo-List-api.git
 cd Todo-List-api
 
 # 2. Create virtual environment
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or
-venv\Scripts\activate     # Windows
+source venv/bin/activate        # Linux/Mac
+# یا
+venv\Scripts\activate           # Windows
 
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Run migrations
+# 4. Configure environment
+cp .env.example .env
+# Edit .env with your local configuration
+# Set DB_HOST=localhost for local PostgreSQL
+
+# 5. Run migrations
 python manage.py makemigrations
 python manage.py migrate
 
-# 5. Create superuser
+# 6. Create superuser
 python manage.py createsuperuser
 
-# 6. Run development server
+# 7. Run development server
 python manage.py runserver
 
-# 7. Open in browser
-# - API: http://127.0.0.1:8000/api/v1/todos/
+# 8. Open in browser
 # - Swagger: http://127.0.0.1:8000/swagger/
-# - ReDoc: http://127.0.0.1:8000/redoc/
-```
+# - ReDoc:   http://127.0.0.1:8000/redoc/
+# - Admin:   http://127.0.0.1:8000/admin/
 
----
+📡 API Endpoints
+🔐 احراز هویت | Authentication
+Method	Endpoint	توضیح	Auth
+POST	/api/v1/auth/send-otp/	درخواست کد تأیید برای ثبت‌نام	❌
+POST	/api/v1/auth/verify-otp-register/	تأیید کد و تکمیل ثبت‌نام + دریافت JWT	❌
+POST	/api/v1/auth/login/	ورود با رمز عبور (پیش‌فرض)	❌
+POST	/api/v1/auth/send-login-otp/	درخواست کد OTP برای ورود بدون رمز	❌
+POST	/api/v1/auth/verify-login-otp/	تأیید کد OTP و ورود + دریافت JWT	❌
+POST	/api/v1/auth/send-email-verification/	ارسال کد تأیید به ایمیل	✅ JWT
+POST	/api/v1/auth/verify-email/	تأیید ایمیل با کد دریافتی	✅ JWT
+POST	/api/v1/auth/password-reset/request/	درخواست کد بازیابی رمز (با موبایل)	❌
+POST	/api/v1/auth/password-reset/confirm/	تأیید کد و تنظیم رمز جدید	❌
+📋 لیست‌ها | Lists
+Method	Endpoint	توضیح
+GET	/api/v1/todos/lists/	دریافت همه لیست‌های کاربر
+POST	/api/v1/todos/lists/	ایجاد لیست جدید
+GET	/api/v1/todos/lists/{list_id}/	دریافت جزئیات یک لیست
+PUT	/api/v1/todos/lists/{list_id}/	بروزرسانی کامل لیست
+PATCH	/api/v1/todos/lists/{list_id}/	بروزرسانی جزئی لیست
+DELETE	/api/v1/todos/lists/{list_id}/	حذف لیست
+✅ وظایف | Tasks
+Method	Endpoint	توضیح
+GET	/api/v1/todos/tasks/	دریافت همه وظایف کاربر
+POST	/api/v1/todos/tasks/	ایجاد وظیفه جدید
+GET	/api/v1/todos/tasks/{task_id}/	دریافت جزئیات وظیفه
+PUT	/api/v1/todos/tasks/{task_id}/	بروزرسانی کامل وظیفه
+PATCH	/api/v1/todos/tasks/{task_id}/	بروزرسانی جزئی وظیفه
+DELETE	/api/v1/todos/tasks/{task_id}/	حذف وظیفه
+GET	/api/v1/todos/lists/{list_id}/tasks/	دریافت وظایف یک لیست خاص
+POST	/api/v1/todos/lists/{list_id}/tasks/	ایجاد وظیفه در لیست خاص
+🔍 فیلتر و جستجو | Filtering & Search
+Parameter	Description	Example
+status	فیلتر بر اساس وضعیت	?status=todo
+priority	فیلتر بر اساس اولویت	?priority=high
+list	فیلتر بر اساس لیست	?list=1
+search	جستجوی متنی در عنوان	?search=buy
+o / ordering	مرتب‌سازی نتایج	?o=-created_at
+page	شماره صفحه	?page=1
+page_size	تعداد آیتم در صفحه	?page_size=10
 
-# 🔌 API Endpoints
+    مقادیر معتبر:
 
-## 🔐 Authentication
+        status: todo, inprogress, done
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/token/` | Get JWT token (login) |
-| POST | `/api/token/refresh/` | Refresh access token |
+        priority: low, medium, high
 
-## 📋 Lists
+        ordering: status, -status, priority, -priority, task_title, -task_title, created_at, -created_at
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/v1/todos/lists/` | Get all user lists |
-| POST | `/api/v1/todos/lists/` | Create a new list |
-| GET | `/api/v1/todos/lists/{list_id}/` | Get list details |
-| PUT | `/api/v1/todos/lists/{list_id}/` | Update a list |
-| PATCH | `/api/v1/todos/lists/{list_id}/` | Partial update |
-| DELETE | `/api/v1/todos/lists/{list_id}/` | Delete a list |
+📊 مدل‌های داده | Data Models
+👤 User (کاربر سفارشی)
+فیلد	نوع	توضیح
+phone_number	CharField(15)	شناسه یکتا برای ورود (USERNAME_FIELD)
+email	EmailField	ایمیل کاربر (اختیاری)
+email_verified	BooleanField	وضعیت تأیید ایمیل
+full_name	CharField(150)	نام کامل (اختیاری)
+is_active	BooleanField	وضعیت فعال بودن حساب
+is_staff	BooleanField	دسترسی به پنل ادمین
+is_phone_verified	BooleanField	وضعیت تأیید شماره موبایل
+date_joined	DateTimeField	تاریخ ثبت‌نام
 
-## ✅ Tasks
+ویژگی‌های خاص:
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/api/v1/todos/tasks/` | Get all user tasks |
-| POST | `/api/v1/todos/tasks/` | Create a new task |
-| GET | `/api/v1/todos/tasks/{pk}/` | Get task details |
-| PUT | `/api/v1/todos/tasks/{pk}/` | Update a task |
-| PATCH | `/api/v1/todos/tasks/{pk}/` | Partial update |
-| DELETE | `/api/v1/todos/tasks/{pk}/` | Delete a task |
-| GET | `/api/v1/todos/lists/{list_id}/tasks/` | Get tasks in a list |
-| POST | `/api/v1/todos/lists/{list_id}/tasks/` | Create task in list |
+    ساخته‌شده از صفر با AbstractBaseUser + PermissionsMixin
 
-## 🔍 Filtering & Search
+    استفاده از phone_number به‌عنوان شناسه (به جای username)
 
-Tasks can be filtered using query parameters:
+    UserManager سفارشی برای ساخت کاربر و سوپریوزر
 
-| Parameter | Description | Example |
-|---|---|---|
-| `status` | Filter by status | `?status=todo` |
-| `priority` | Filter by priority | `?priority=high` |
-| `search` | Search in task title | `?search=buy` |
-| `ordering` | Sort results | `?ordering=-created_at` |
-| `page` | Page number | `?page=1` |
-| `page_size` | Items per page | `?page_size=10` |
+    ایندکس‌گذاری روی phone_number و email برای عملکرد بهتر
 
----
+📱 PhoneVerification (تأیید موبایل با TOTP)
+فیلد	نوع	توضیح
+phone_number	CharField(11)	شماره در حال تأیید
+secret	CharField(32)	کلید Base32 برای TOTP
+session_token	CharField(64)	توکن جلسه (UUID)
+created_at	DateTimeField	زمان ایجاد
+verified	BooleanField	وضعیت تأیید
 
-# 🧪 اجرای تست‌ها | Running Tests
+ویژگی‌ها:
 
-```bash
-# Run all tests
-pytest
+    استفاده از TOTP (Time-based One-Time Password) با pyotp
 
-# Run with verbose output
+    کد هرگز در دیتابیس ذخیره نمی‌شود — فقط secret ذخیره می‌شود
+
+    اعتبار خودکار ۲ دقیقه‌ای (بدون نیاز به چک دستی)
+
+    جلوگیری از replay attack
+
+✉️ EmailVerification (تأیید ایمیل با SHA256)
+فیلد	نوع	توضیح
+email	EmailField	ایمیل در حال تأیید
+user	ForeignKey	کاربر مربوطه
+code_hash	CharField(64)	هش SHA256 کد ۶ رقمی
+created_at	DateTimeField	زمان ایجاد
+is_used	BooleanField	وضعیت مصرف
+
+ویژگی‌ها:
+
+    کد اصلی در دیتابیس ذخیره نمی‌شود — فقط هش SHA256
+
+    تولید کد ۶ رقمی با secrets (cryptographically secure)
+
+    اعتبار ۱۰ دقیقه‌ای
+
+    ایندکس‌گذاری روی email و user
+
+📋 List (لیست کار)
+فیلد	نوع	توضیح
+list_id	AutoField	شناسه یکتا (PK)
+user	ForeignKey	مالک لیست
+list_name	CharField(200)	نام لیست
+description	TextField	توضیحات (اختیاری)
+created_at	DateTimeField	تاریخ ایجاد
+updated_at	DateTimeField	تاریخ بروزرسانی
+✅ Task (وظیفه)
+فیلد	نوع	توضیح
+task_id	AutoField	شناسه یکتا (PK)
+user	ForeignKey	مالک وظیفه
+list	ForeignKey	لیست والد
+task_title	CharField(255)	عنوان وظیفه
+task_description	TextField	توضیحات (اختیاری)
+priority	ChoiceField	low / medium / high
+status	ChoiceField	todo / inprogress / done
+due_date	DateTimeField	تاریخ سررسید (اختیاری)
+created_at	DateTimeField	تاریخ ایجاد
+updated_at	DateTimeField	تاریخ بروزرسانی
+🧪 اجرای تست‌ها | Running Tests
+bash
+
+# Run all tests (85 tests)
 pytest -v
 
-# Run specific test file
-pytest apps/todos/tests/test_models.py
+# Run only accounts tests
+pytest apps/accounts/tests/ -v
+
+# Run only todos tests
+pytest apps/todos/tests/ -v
 
 # Run with coverage report
 pytest --cov=apps --cov-report=html
 
 # Run linting
-flake8 .
+flake8 apps/
 
 # Run code formatting
 black .
-```
 
-## 📊 Test Coverage
+📊 پوشش تست‌ها | Test Coverage (85 Tests)
+دسته	تعداد	شرح
+test_models.py (accounts)	۳۰ تست	User, PhoneVerification (TOTP), EmailVerification (SHA256)
+test_auth_apis.py (accounts)	۲۶ تست	ثبت‌نام, لاگین (رمز + OTP), تأیید ایمیل, بازیابی رمز, Rate Limiting
+test_models.py (todos)	۸ تست	List & Task creation, validation
+test_views.py (todos)	۲۱ تست	CRUD, filtering, ordering, pagination, security checks
+⚙️ متغیرهای محیطی | Environment Variables
 
-Tests cover:
+فایل .env.example را به .env کپی کنید و مقادیر را تنظیم کنید:
+ini
 
-- ✅ **Models** — List and Task creation & validation
-- ✅ **Serializers** — Data validation & read-only fields
-- ✅ **Views** — CRUD operations & permission checks
-- ✅ **Filters** — Task filtering & search functionality
-- ✅ **User** — Custom user model & profile creation
+# Django
+SECRET_KEY=your-secret-key-change-this-in-production
+DEBUG=False
+ALLOWED_HOSTS=localhost,127.0.0.1,your-domain.com
 
----
+# Database
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=todo_db
+DB_USER=todo_user
+DB_PASSWORD=your-db-password
+DB_HOST=db
+DB_PORT=5432
 
-# 📚 مستندات API | API Documentation
+    توجه: مقادیر POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD باید دقیقاً با DB_NAME, DB_USER, DB_PASSWORD یکسان باشند.
 
-پس از اجرای پروژه، مستندات API از طریق آدرس‌های زیر در دسترس است:
+🔧 ابزارهای کیفیت کد | Code Quality
+bash
 
-After running the project, API documentation is available at:
-
-- **Swagger UI:** `http://localhost:8000/swagger/`
-- **ReDoc:** `http://localhost:8000/redoc/`
-
-> 💡 برای تست API در Swagger:
-> 1. ابتدا از `/api/token/` توکن دریافت کنید
-> 2. روی دکمه **Authorize** کلیک کنید
-> 3. مقدار `Bearer <your_token>` را وارد کنید
->
-> 💡 To test the API in Swagger:
-> 1. Get your token from `/api/token/`
-> 2. Click **Authorize** button
-> 3. Enter `Bearer <your_token>`
-
----
-
-# 🗄 مدل‌های داده | Data Models
-
-## 👤 User (کاربر سفارشی)
-
-- ارث‌بری از `AbstractUser` django
-- فیلدهای اضافی: `created_at`، `updated_at`
-- متدهای سفارشی: `create_user`، `create_user_with_profile`، `create_superuser`
-- پروفایل خودکار برای هر کاربر
-
-**👤 User (Custom)**
-- Extends Django `AbstractUser`
-- Extra fields: `created_at`, `updated_at`
-- Custom methods: `create_user`, `create_user_with_profile`, `create_superuser`
-- Automatic profile creation
-
----
-
-## 📋 List (لیست کار)
-
-| فیلد | نوع | توضیح |
-|---|---|---|
-| `list_id` | AutoField | شناسه یکتا |
-| `user` | ForeignKey | مالک لیست |
-| `list_name` | CharField(200) | نام لیست |
-| `description` | TextField | توضیحات (اختیاری) |
-| `created_at` | DateTime | تاریخ ایجاد |
-| `updated_at` | DateTime | تاریخ بروزرسانی |
-
-**📋 List**
-
-| Field | Type | Description |
-|---|---|---|
-| `list_id` | AutoField | Unique ID |
-| `user` | ForeignKey | List owner |
-| `list_name` | CharField(200) | List name |
-| `description` | TextField | Description (optional) |
-| `created_at` | DateTime | Created timestamp |
-| `updated_at` | DateTime | Updated timestamp |
-
----
-
-## ✅ Task (وظیفه)
-
-| فیلد | نوع | توضیح |
-|---|---|---|
-| `task_id` | AutoField | شناسه یکتا |
-| `user` | ForeignKey | مالک وظیفه |
-| `list` | ForeignKey | لیست والد |
-| `task_title` | CharField(255) | عنوان وظیفه |
-| `task_description` | TextField | توضیحات (اختیاری) |
-| `priority` | ChoiceField | low / medium / high |
-| `status` | ChoiceField | todo / inprogress / done |
-| `due_date` | DateTime | تاریخ سررسید (اختیاری) |
-| `created_at` | DateTime | تاریخ ایجاد |
-| `updated_at` | DateTime | تاریخ بروزرسانی |
-
-**✅ Task**
-
-| Field | Type | Description |
-|---|---|---|
-| `task_id` | AutoField | Unique ID |
-| `user` | ForeignKey | Task owner |
-| `list` | ForeignKey | Parent list |
-| `task_title` | CharField(255) | Task title |
-| `task_description` | TextField | Description (optional) |
-| `priority` | ChoiceField | low / medium / high |
-| `status` | ChoiceField | todo / inprogress / done |
-| `due_date` | DateTime | Due date (optional) |
-| `created_at` | DateTime | Created timestamp |
-| `updated_at` | DateTime | Updated timestamp |
-
----
-
-# 📝 Development Notes
-
-## Code Quality Tools
-
-```bash
 # Format code with Black
 black .
 
 # Lint with Flake8
-flake8 .
-
-# Run tests
-pytest -v
+flake8 apps/
 
 # Run all checks
-black . && flake8 . && pytest -v
-```
+black . && flake8 apps/ && pytest -v
 
-## Environment Variables (.env)
+📝 مستندات API | API Documentation
 
-```env
-SECRET_KEY=your-secret-key-here
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-REDIS_HOST=redis
-REDIS_PORT=6379
-```
+پس از اجرای پروژه، مستندات API از طریق آدرس‌های زیر در دسترس است:
 
----
+    Swagger UI: http://localhost/swagger/
 
-# 👤 نویسنده | Author
+    ReDoc: http://localhost/redoc/
 
-**Mohammad Yasin Jafari**
+    برای تست API در Swagger:
 
-- GitHub: [@MY-Jafari](https://github.com/MY-Jafari)
-- Project: [Todo-List-api](https://github.com/MY-Jafari/Todo-List-api)
+        ابتدا از /api/v1/auth/login/ وارد شوید (با رمز عبور)
 
----
+        یا از /api/v1/auth/verify-login-otp/ (با کد OTP)
 
-# 📄 مجوز | License
+        توکن access را کپی کنید
 
-This project is licensed under the MIT License. See [LICENSE](https://github.com/MY-Jafari/Todo-List-api/blob/main/LICENSE) for details.
+        روی دکمه Authorize کلیک کنید
 
----
+        مقدار Bearer <access_token> را وارد کنید
 
-<div align="center">
+🏗️ معماری Docker | Docker Architecture
+text
 
-<sub>Made with ❤️ by MY-Jafari | First Django API Project</sub>
+                    Internet
+                        │
+                        ▼
+                ┌───────────────┐
+                │    Nginx      │  ← Reverse Proxy (Port 80)
+                │  (Alpine)     │
+                └───────┬───────┘
+                        │
+                        ▼
+                ┌───────────────┐
+                │  Gunicorn     │  ← WSGI Server (Port 8000)
+                │  (4 workers)  │
+                └───────┬───────┘
+                        │
+                ┌───────┴───────┐
+                │               │
+                ▼               ▼
+        ┌──────────┐    ┌──────────┐
+        │PostgreSQL│    │  Static  │
+        │   (16)   │    │  Files   │
+        └──────────┘    └──────────┘
 
-</div>
+👤 نویسنده | Author
+
+Mohammad Yasin Jafari
+
+    GitHub: @MY-Jafari
+
+    Project: Todo-List-api
+
+📄 مجوز | License
+
+This project is licensed under the MIT License.
+See LICENSE for details.
+<div align="center"> Made with ❤️ by <b>MY-Jafari</b> | Full-Stack Django API Project
+
+<b>🔐 Custom Auth · 📋 Task Management · 🐳 Dockerized · ✅ 85 Tests</b>
+</div> ```
