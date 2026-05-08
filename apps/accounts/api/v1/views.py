@@ -12,19 +12,19 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model, authenticate
+
 from apps.accounts.models import PhoneVerification, EmailVerification
 from apps.accounts.notifications import send_phone_verification_code, send_email_verification_code
-
-from apps.accounts.models import PhoneVerification
-from apps.accounts.notifications import send_phone_verification_code
 from .serializers import (
-    SendEmailVerificationSerializer,
     SendOTPSerializer,
-    VerifyEmailSerializer,
     VerifyOTPAndRegisterSerializer,
     SendLoginOTPSerializer,
     VerifyLoginOTPSerializer,
     LoginSerializer,
+    SendEmailVerificationSerializer,
+    VerifyEmailSerializer,
+    PasswordResetRequestSerializer,
+    PasswordResetConfirmSerializer,
 )
 
 User = get_user_model()
@@ -384,5 +384,83 @@ class VerifyEmailView(generics.GenericAPIView):
 
         return Response(
             {'detail': _('Email verified successfully.')},
+            status=status.HTTP_200_OK
+        )
+
+class PasswordResetRequestView(generics.GenericAPIView):
+    serializer_class = PasswordResetRequestSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        phone_number = serializer.validated_data['phone_number']
+
+        # Rate limiting
+        recent = PhoneVerification.objects.filter(
+            phone_number=phone_number,
+            created_at__gte=timezone.now() - timedelta(seconds=OTP_COOLDOWN_SECONDS)
+        ).order_by('-created_at').first()
+
+        if recent:
+            remaining = int(
+                (recent.created_at + timedelta(seconds=OTP_COOLDOWN_SECONDS) - timezone.now()).total_seconds()
+            )
+            if remaining > 0:
+                return Response(
+                    {'detail': _(f'Please wait {remaining} seconds.')},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS
+                )
+
+        # Generate TOTP
+        verification, code = PhoneVerification.start_verification(phone_number)
+        verification_token = create_verification_token(
+            phone_number, str(verification.id)
+        )
+        send_phone_verification_code(phone_number, code)
+
+        return Response(
+            {
+                'detail': _('Password reset code sent.'),
+                'verification_token': verification_token,
+            },
+            status=status.HTTP_200_OK
+        )
+class PasswordResetConfirmView(generics.GenericAPIView):
+    """
+    Confirm password reset with OTP and set new password.
+
+    POST /api/v1/auth/password-reset/confirm/
+
+    Verifies the OTP code and sets a new password for the user.
+
+    Request Body:
+        {
+            "verification_token": "eyJ...",
+            "otp_code": "123456",
+            "new_password": "newsecurepass123"
+        }
+
+    Response (200 OK):
+        {"detail": "Password has been reset successfully."}
+    """
+    serializer_class = PasswordResetConfirmSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        """Handle password reset confirmation."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data['user']
+        new_password = serializer.validated_data['new_password']
+
+        # Set the new password
+        user.set_password(new_password)
+        user.save()
+
+        return Response(
+            {'detail': _('Password has been reset successfully.')},
             status=status.HTTP_200_OK
         )

@@ -400,3 +400,131 @@ class VerifyEmailSerializer(serializers.Serializer):
             )
 
         return data
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """
+    Serializer for requesting a password reset code.
+
+    Validates that the phone number belongs to an existing user.
+    The reset code will be sent to this phone number via SMS.
+    """
+    phone_number = serializers.CharField(
+        max_length=11,
+        min_length=11,
+        help_text=_('Registered Iranian phone number (11 digits, starting with 09).')
+    )
+
+    def validate_phone_number(self, value):
+        """
+        Validate Iranian mobile format and check if registered.
+
+        Args:
+            value (str): The phone number to validate.
+
+        Returns:
+            str: The validated phone number.
+
+        Raises:
+            serializers.ValidationError: If format is invalid or not registered.
+        """
+        pattern = r'^09\d{9}$'
+
+        if not re.match(pattern, value):
+            raise serializers.ValidationError(
+                _('Invalid phone number format. '
+                  'Must be 11 digits starting with 09 (e.g., 09123456789).')
+            )
+
+        if not User.objects.filter(phone_number=value).exists():
+            raise serializers.ValidationError(
+                _('No account found with this phone number.')
+            )
+
+        return value
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """
+    Serializer for confirming password reset with OTP.
+
+    Uses a JWT verification_token from the password-reset request.
+    Sets a new password for the user after successful verification.
+    """
+    verification_token = serializers.CharField(
+        help_text=_('JWT verification token from password-reset request response.')
+    )
+    otp_code = serializers.CharField(
+        max_length=6,
+        min_length=6,
+        help_text=_('6-digit OTP code sent to the phone.')
+    )
+    new_password = serializers.CharField(
+        min_length=6,
+        write_only=True,
+        help_text=_('New password (minimum 6 characters).')
+    )
+
+    def validate(self, data):
+        """
+        Decode JWT verification token and verify OTP code.
+
+        Args:
+            data (dict): Input data with verification_token, otp_code,
+                and new_password.
+
+        Returns:
+            dict: Validated data with phone_number and user added.
+
+        Raises:
+            serializers.ValidationError: If token or code is invalid.
+        """
+        verification_token = data['verification_token']
+        otp_code = data['otp_code']
+
+        # Decode JWT verification token
+        try:
+            token = AccessToken(verification_token)
+            phone_number = token.get('phone_number')
+            verification_id = token.get('verification_id')
+
+            if not phone_number or not verification_id:
+                raise serializers.ValidationError(
+                    _('Invalid verification token.')
+                )
+
+        except TokenError:
+            raise serializers.ValidationError(
+                _('Expired or invalid verification token. '
+                  'Please request a new code.')
+            )
+
+        # Find the verification record
+        try:
+            verification = PhoneVerification.objects.get(
+                id=verification_id,
+                phone_number=phone_number,
+                verified=False
+            )
+        except PhoneVerification.DoesNotExist:
+            raise serializers.ValidationError(
+                _('Verification session not found. '
+                  'Please request a new code.')
+            )
+
+        # Verify TOTP code
+        if not verification.verify_code(otp_code):
+            raise serializers.ValidationError(
+                _('Invalid or expired verification code.')
+            )
+
+        # Find the user
+        try:
+            user = User.objects.get(phone_number=phone_number)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                _('User not found.')
+            )
+
+        data['phone_number'] = phone_number
+        data['user'] = user
+        return data
