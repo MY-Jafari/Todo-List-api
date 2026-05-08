@@ -5,13 +5,11 @@ pillow
 djangorestframework
 
 # third party modules
-markdown
+
 django-filter
 drf-yasg[validation]
 djangorestframework-simplejwt 
-drf-spectacular
-psycopg[binary]==3.2.9
-asgiref==3.9.1
+psycopg==3.2.9
 pyotp
 
 # deployment module
