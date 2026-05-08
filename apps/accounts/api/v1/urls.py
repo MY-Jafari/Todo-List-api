@@ -1,7 +1,5 @@
 """
 URL configuration for accounts API v1.
-
-Defines endpoints for phone verification and registration.
 """
 
 from django.urls import path
@@ -10,14 +8,14 @@ from . import views
 app_name = 'accounts-v1'
 
 urlpatterns = [
-    path(
-        'send-otp/',
-        views.SendOTPView.as_view(),
-        name='send-otp'
-    ),
-    path(
-        'verify-otp-register/',
-        views.VerifyOTPAndRegisterView.as_view(),
-        name='verify-otp-register'
-    ),
+    # Registration
+    path('send-otp/', views.SendOTPView.as_view(), name='send-otp'),
+    path('verify-otp-register/', views.VerifyOTPAndRegisterView.as_view(), name='verify-otp-register'),
+
+    # Login (password)
+    path('login/', views.LoginView.as_view(), name='login'),
+
+    # Login (OTP)
+    path('send-login-otp/', views.SendLoginOTPView.as_view(), name='send-login-otp'),
+    path('verify-login-otp/', views.VerifyLoginOTPView.as_view(), name='verify-login-otp'),
 ]
