@@ -128,6 +128,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     full_name = models.CharField(
         max_length=150,
         blank=True,
+        null=True,
+        default="",
         verbose_name=_("full name"),
         help_text=_("Optional full name of the user."),
     )

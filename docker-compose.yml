@@ -27,18 +27,21 @@ services:
       - DJANGO_SETTINGS_MODULE=core.settings
       - DB_HOST=db
       - DB_PORT=5432
+      - DEBUG=True
     volumes:
+      - .:/app
       - static_volume:/app/staticfiles
       - media_volume:/app/media
     depends_on:
       db:
         condition: service_healthy
-
+    ports:
+      - "8000:8000"
     command: >
       sh -c "
         python manage.py migrate --noinput &&
         python manage.py collectstatic --noinput &&
-        gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120 core.wsgi:application
+        python manage.py runserver 0.0.0.0:8000
       "
 
   nginx:
